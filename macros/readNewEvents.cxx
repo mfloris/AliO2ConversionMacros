@@ -14,38 +14,51 @@
 /// https://www.gnu.org/copyleft/gpl.html
 
 #include "AliO2Event.h"
+#include "AliO2Timeframe.h"
 #include <TFile.h>
 #include <TList.h>
 #include <TObject.h>
 #include <iostream>
-/// Short readNewEvents description
+/// Reads events from the new timeframe format
 ///
-/// More detailed readNewEvents description
-/// \return What this function returns
+/// Prints an overview of the tracks and the timestamp for events which contain
+/// ambiguities
+/// \return Returns 0 on succes.
 int readNewEvents(int argc, char **filenames) {
-  size_t eventCounter = 0;
-  size_t trackCounter = 0;
-  size_t vertexCounter = 0;
-  AliO2Event *event;
   for (int i = 0; i < argc; i++) {
     TString filename(filenames[i]);
     // MyTask;1/MyOutputContainer;1/
     TFile *file = new TFile(filename, "READ");
+    file->ls();
     auto directory = file->GetDirectory("MyTask");
-    // std::cout << directory->ClassName() << std::endl;
+    std::cout << directory->ClassName() << std::endl;
+    directory->ls();
     // this line leaks memory
-    TObject *container = directory->Get("MyOutputContainer");
-    // std::cout << container->ClassName() << std::endl;
-    TList *list = static_cast<TList *>(container);
-    TIter next(list);
-    while ((event = static_cast<AliO2Event *>(next()))) {
-      trackCounter += event->GetNumberOfTracks();
-      vertexCounter += event->GetNumberOfVertices();
-      eventCounter++;
+    AliO2Timeframe *container =
+        dynamic_cast<AliO2Timeframe *>(directory->Get("AliO2Timeframe"));
+    if (!container) {
+      std::cerr << "Failed to read timeframe!\n";
+      return -1;
     }
-    std::cout << "Found a total of " << trackCounter << " tracks, "
-              << vertexCounter << " vertices, spread over " << eventCounter
-              << " events \n";
+    size_t event_count = container->getNumberOfEvents();
+    std::cout << "Timeframe contains " << event_count << " events\n";
+    for (size_t i = 0; i < event_count; i++) {
+      AliO2Event event = container->getEvent(i);
+      if (event.GetNumberOfAmbigousTracks()) {
+        printf("%lu %f\n Total: %lu, %lu, %lu\n Global: %lu, %lu, %lu\n ITS: "
+               "%lu,"
+               "%lu, %lu\n",
+               i, event.getTimestamp(), event.GetNumberOfTracks(),
+               event.GetNumberOfUnambigousTracks(),
+               event.GetNumberOfAmbigousTracks(),
+               event.GetNumberOfGlobalTracks(),
+               event.GetNumberOfUnambigousGlobalTracks(),
+               event.GetNumberOfAmbigousGlobalTracks(),
+               event.GetNumberOfITSTracks(),
+               event.GetNumberOfUnambigousITSTracks(),
+               event.GetNumberOfAmbigousITSTracks());
+      }
+    }
     delete container;
     delete (file);
   }

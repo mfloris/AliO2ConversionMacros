@@ -15,15 +15,10 @@
 ///
 
 #include "ConversionAnalysis.h"
-#include "AliO2Event.h"
+#include "AliO2Timeframe.h"
 #include <AliAODEvent.h>
-#include <AliAODv0.h>
-#include <AliESDtrack.h>
-#include <AliExternalTrackParam.h>
 #include <AliLog.h>
 #include <TChain.h>
-#include <TList.h>
-#include <vector>
 // root specific
 ClassImp(ConversionAnalysis);
 
@@ -33,29 +28,43 @@ ConversionAnalysis::ConversionAnalysis() {}
 ConversionAnalysis::ConversionAnalysis(const char *name)
     : AliAnalysisTaskSE(name) {
   DefineInput(0, TChain::Class());
-  DefineOutput(1, TList::Class());
+  DefineOutput(1, AliO2Timeframe::Class());
 }
 // default destructor
 ConversionAnalysis::~ConversionAnalysis() { delete mResults; }
 
 void ConversionAnalysis::UserCreateOutputObjects() {
-  mResults = new TList();
-  mResults->SetOwner(kTRUE);
+  mResults = new AliO2Timeframe();
   PostData(1, mResults);
 }
 // per event
 void ConversionAnalysis::UserExec(Option_t *option) {
   event_counter += 1;
   // TODO: Ask why AODEvent() doesn't work
-  const AliAODEvent *event = dynamic_cast<AliAODEvent *>(InputEvent());
+  const AliESDEvent *event = dynamic_cast<AliESDEvent *>(InputEvent());
   if (!event) {
-    AliError(TString::Format("Failed to fetch AoD event\n"));
+    AliError(TString::Format("Failed to fetch ESD event"));
+    failed_event_counter += 1;
+    return;
+  } else if (0 == event->GetNumberOfTracks()) {
+    // AliInfo(TString::Format("No Tracks in event"));
     failed_event_counter += 1;
     return;
   }
-  AliO2Event *newEvent = new AliO2Event(event);
-  mResults->Add(newEvent);
+  // TODO: We can probably do this much faster by using math
+  Double_t mu = 25.0 / 20000.0;
+  timestamp_t offset = 0;
+  while (0 == eventsOnQueue) {
+    eventsOnQueue = rng.Poisson(mu);
+    offset += 25;
+  }
+  currentTimestamp += offset;
+  mResults->addEvent(event, currentTimestamp);
+  eventsOnQueue -= 1;
   PostData(1, mResults);
 }
 // Cleanup
-void ConversionAnalysis::Terminate(Option_t *option) {}
+void ConversionAnalysis::Terminate(Option_t *option) {
+  AliInfo(TString::Format("Failed %u/%u events", failed_event_counter,
+                          event_counter));
+}

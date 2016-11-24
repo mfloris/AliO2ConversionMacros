@@ -8,9 +8,10 @@
 #define CONVERSIONANALYSIS_H
 
 // Include the base classes
+#include "InterfaceTimestampped.h"
 #include <AliAnalysisTaskSE.h>
-class TList;
-
+#include <TRandom2.h>
+class AliO2Timeframe;
 /// Short ConversionAnalysis description
 ///
 /// More detailed ConversionAnalysis description
@@ -38,10 +39,12 @@ private:
   ConversionAnalysis(const ConversionAnalysis &);
   /// assignment operator prohibited
   ConversionAnalysis &operator=(const ConversionAnalysis &);
-
   unsigned event_counter = 0;
   unsigned failed_event_counter = 0;
-  TList *mResults = nullptr;
+  unsigned eventsOnQueue = 0;
+  TRandom2 rng;
+  timestamp_t currentTimestamp = 0.0f;
+  AliO2Timeframe *mResults = nullptr; //!
   // root specific
   ClassDef(ConversionAnalysis, 1);
 };
