@@ -13,12 +13,14 @@
 /// General Public License for more details at
 /// https://www.gnu.org/copyleft/gpl.html
 
-#include "AliO2Event.h"
-#include "AliO2Timeframe.h"
+#include "O2Event.h"
+#include "O2Timeframe.h"
 #include <TFile.h>
+#include <TKey.h>
 #include <TList.h>
 #include <TObject.h>
 #include <iostream>
+#include <utilities/logging.h>
 /// Reads events from the new timeframe format
 ///
 /// Prints an overview of the tracks and the timestamp for events which contain
@@ -29,23 +31,29 @@ int readNewEvents(int argc, char **filenames) {
     TString filename(filenames[i]);
     // MyTask;1/MyOutputContainer;1/
     TFile *file = new TFile(filename, "READ");
-    file->ls();
+    // file->ls();
     auto directory = file->GetDirectory("MyTask");
-    std::cout << directory->ClassName() << std::endl;
+    // std::cout << directory->ClassName() << std::endl;
     directory->ls();
     // this line leaks memory
-    AliO2Timeframe *container =
-        dynamic_cast<AliO2Timeframe *>(directory->Get("AliO2Timeframe"));
+    TList *keys = file->GetListOfKeys();
+    report(INFO, "file contains %d entries", keys->GetEntries());
+    TIter next(keys);
+    TKey *key;
+    // while ((key = (TKey *)next())) {
+    O2Timeframe *container =
+        dynamic_cast<O2Timeframe *>(directory->Get("O2Timeframe"));
     if (!container) {
       std::cerr << "Failed to read timeframe!\n";
       return -1;
     }
+    container->WriteToFile("testfile.bin");
     size_t event_count = container->getNumberOfEvents();
     std::cout << "Timeframe contains " << event_count << " events\n";
     for (size_t i = 0; i < event_count; i++) {
-      AliO2Event event = container->getEvent(i);
+      O2Event event = container->getEvent(i);
       if (event.GetNumberOfAmbigousTracks()) {
-        printf("%lu %f\n Total: %lu, %lu, %lu\n Global: %lu, %lu, %lu\n ITS: "
+        printf("%lu %f\n Total: %lu, %lu, %lu\n Global: %lu, %lu, %lu\nITS: "
                "%lu,"
                "%lu, %lu\n",
                i, event.getTimestamp(), event.GetNumberOfTracks(),
@@ -60,6 +68,7 @@ int readNewEvents(int argc, char **filenames) {
       }
     }
     delete container;
+    //}
     delete (file);
   }
   return 0;

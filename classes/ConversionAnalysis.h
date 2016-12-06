@@ -8,10 +8,12 @@
 #define CONVERSIONANALYSIS_H
 
 // Include the base classes
-#include "InterfaceTimestampped.h"
 #include <AliAnalysisTaskSE.h>
+
+#include "InterfaceTimestampped.h"
 #include <TRandom2.h>
-class AliO2Timeframe;
+
+class O2Timeframe;
 /// Short ConversionAnalysis description
 ///
 /// More detailed ConversionAnalysis description
@@ -44,7 +46,7 @@ private:
   unsigned eventsOnQueue = 0;
   TRandom2 rng;
   timestamp_t currentTimestamp = 0.0f;
-  AliO2Timeframe *mResults = nullptr; //!
+  O2Timeframe *mResults = nullptr; //!
   // root specific
   ClassDef(ConversionAnalysis, 1);
 };

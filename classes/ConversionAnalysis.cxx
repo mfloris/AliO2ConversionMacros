@@ -14,9 +14,10 @@
 /// https://www.gnu.org/copyleft/gpl.html
 ///
 
+#include "O2Timeframe.h"
+
 #include "ConversionAnalysis.h"
-#include "AliO2Timeframe.h"
-#include <AliAODEvent.h>
+#include <AliESDEvent.h>
 #include <AliLog.h>
 #include <TChain.h>
 // root specific
@@ -28,13 +29,13 @@ ConversionAnalysis::ConversionAnalysis() {}
 ConversionAnalysis::ConversionAnalysis(const char *name)
     : AliAnalysisTaskSE(name) {
   DefineInput(0, TChain::Class());
-  DefineOutput(1, AliO2Timeframe::Class());
+  DefineOutput(1, O2Timeframe::Class());
 }
 // default destructor
 ConversionAnalysis::~ConversionAnalysis() { delete mResults; }
 
 void ConversionAnalysis::UserCreateOutputObjects() {
-  mResults = new AliO2Timeframe();
+  mResults = new O2Timeframe();
   PostData(1, mResults);
 }
 // per event
@@ -47,7 +48,7 @@ void ConversionAnalysis::UserExec(Option_t *option) {
     failed_event_counter += 1;
     return;
   } else if (0 == event->GetNumberOfTracks()) {
-    // AliInfo(TString::Format("No Tracks in event"));
+    AliInfo(TString::Format("No Tracks in event"));
     failed_event_counter += 1;
     return;
   }

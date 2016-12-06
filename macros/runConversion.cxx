@@ -13,17 +13,145 @@
 /// General Public License for more details at
 /// https://www.gnu.org/copyleft/gpl.html
 
-#include "AliO2Timeframe.h"
 #include "ConversionAnalysis.h"
+#include "O2Timeframe.h"
 #include <AliAnalysisAlien.h>
 #include <AliAnalysisManager.h>
 #include <AliESDInputHandler.h>
 #include <AliVEventHandler.h>
+#include <TAlienFile.h>
 #include <TChain.h>
+#include <TGrid.h>
+#include <TGridResult.h>
+#include <sys/wait.h>
 #include <utilities/logging.h>
 
-// based on RBertens tutorial
+const int runNumber = 138275;
 
+// TODO: Error checking
+// TODO: proper async, proccess the ones that finish first, first.
+// TODO: Load balance across different sites.
+// TODO: This doesn't work... only one file can be open at a time...
+void asyncGrab(/*TGridResult *directories*/) {
+  // How many connections we try and keep open at a given time.
+  const unsigned simultanious_connections = 64;
+  pid_t child_pid[simultanious_connections];
+  // how many files we need to fetch
+  // Int_t nEntries = directories->GetEntries();
+  // report(INFO, "Grabbing %d files from the grid", nEntries);
+  Int_t active_children = 0;
+  int return_code;
+  while (active_children < simultanious_connections) {
+    child_pid[active_children] = fork();
+    if (child_pid[active_children] == 0) {
+      TGrid::Connect("alien://", 0, 0, "t");
+      TString basedir = Form("alien://%sConversions_%09d/Output/000%d/",
+                             gGrid->GetHomeDirectory(), runNumber, runNumber);
+      TGridResult *directories =
+          gGrid->Ls(Form("Conversions_%09d/Output/%09d", runNumber, runNumber));
+      Int_t nEntries = directories->GetEntries();
+      for (Int_t i = active_children; i < nEntries;
+           i += simultanious_connections) {
+        TString inputfile = TString(directories->GetFileName(i))
+                                .Append("/AnalysisResults.root")
+                                .Prepend(basedir);
+        TString outputfile =
+            Form("~/alice/data/timeframes/%09d_%04d.root", runNumber, i);
+        // report(INFO, "Copying %s to %s", inputfile.Data(),
+        // outputfile.Data());
+        // TFile *file = TFile::Open(inputfile);
+        // if (!file || file->IsZombie()) {
+        //   report(FAIL, "couldn't open inputfile");
+        // } else {
+        //   report(PASS, "Could open file");
+        // }
+        Bool_t result = TFile::Cp(inputfile.Data(), outputfile.Data(), kFALSE);
+        if (!result) {
+          report(FAIL, "failed to copy %s to %s", inputfile.Data(),
+                 outputfile.Data());
+        } else {
+          report(PASS, "Copied %s to %s", inputfile.Data(), outputfile.Data());
+        }
+      }
+      delete directories;
+      exit(0);
+    }
+    active_children++;
+    report(PASS, "spawned %d children", active_children);
+  }
+  report(INFO, "Waiting on children to finish");
+  for (int i = 0; i < active_children; i++) {
+    waitpid(child_pid[i], &return_code, 0);
+    report(INFO, "Child %d exited with %d", i, return_code);
+  }
+  report(PASS, "Children finished");
+  // handles for the async connections
+  // TFileOpenHandle *handles[simultanious_connections];
+  // // how many connections we have started
+  // int initiated_connections;
+  // // Start up to simultanious_connections.
+  // for (initiated_connections = 0;
+  //      (initiated_connections < simultanious_connections) &&
+  //      (initiated_connections < nEntries);
+  //      initiated_connections++) {
+  //   TString filename =
+  //   TString(directories->GetFileName(initiated_connections))
+  //                          .Append("/AnalysisResults.root")
+  //                          .Prepend(basedir);
+  //   handles[initiated_connections] = TAlienFile::AsyncOpen(filename);
+  //   if (!handles[initiated_connections]) {
+  //     report(WARN, "Couldn't acces %s", filename.Data());
+  //   }
+  // }
+  // // Wait for the connections to finisih, in order.
+  // for (int finisished_connections = 0; finisished_connections < nEntries;
+  //      finisished_connections++) {
+  //   report(INFO, "opening %s",
+  //          directories->GetFileName(finisished_connections));
+  //   // Will block until the file has been recieved from AliEn
+  //   TFile *inputFile =
+  //       TFile::Open(handles[finisished_connections %
+  //       simultanious_connections]);
+  //   // If we still have connections to make, immidiatly add a new one in the
+  //   // comsumed slot.
+  //   if (initiated_connections < nEntries) {
+  //     TString filename =
+  //         TString(directories->GetFileName(initiated_connections))
+  //             .Append("/AnalysisResults.root")
+  //             .Prepend(basedir);
+  //     handles[initiated_connections % simultanious_connections] =
+  //         TAlienFile::AsyncOpen(filename);
+  //     if (!handles[initiated_connections % simultanious_connections]) {
+  //       report(WARN, "Couldn't acces %s", filename.Data());
+  //     }
+  //     initiated_connections += 1;
+  //   }
+  //   if (!inputFile) {
+  //     report(FAIL, "Couldn't open %s",
+  //            directories->GetFileName(finisished_connections));
+  //     continue;
+  //   } else {
+  //     report(PASS, "Opened %s",
+  //            directories->GetFileName(finisished_connections));
+  //   }
+  //   // open an output file
+  //   TFile *outputFile =
+  //       TFile::Open(Form("AnalysisResults_000%d.root", runNumber), "update");
+  //   // fetch the timeframe for the netfile and write it to the output file.
+  //   inputFile->GetDirectory("MyTask")->Get("O2Timeframe")->Write();
+  //   report(PASS, "Saved %s",
+  //   directories->GetFileName(finisished_connections));
+  //   // Show the current structure of the output file.
+  //   outputFile->ls();
+  //   // close the files
+  //   delete inputFile;
+  //   delete outputFile;
+  // }
+}
+
+// based on RBertens tutorial
+class test : public InterfaceTimestampped {};
+class test2 : public virtual InterfaceTimestampped {};
 /// /alice/data/2010/LHC10b/000117042/ESDs/pass3/10000117042035.230/.root
 const TString localESDFile("./AliESDs.root");
 enum Mode { Local, Grid, TestGrid, Terminate };
@@ -32,8 +160,9 @@ enum Mode { Local, Grid, TestGrid, Terminate };
 ///
 /// \param mode Determines in what mode the conversion script runs.
 /// \return returns 0 on success
-int runConversion(Mode mode = Local) {
-
+int runConversion(Mode mode = Terminate) {
+  report(INFO, "%lu, %lu , %lu", sizeof(InterfaceTimestampped), sizeof(test),
+         sizeof(test2));
   // create the analysis manager
   AliAnalysisManager *mgr = new AliAnalysisManager("AnalysisTaskExample");
   AliESDInputHandler *ESDH = new AliESDInputHandler();
@@ -49,10 +178,10 @@ int runConversion(Mode mode = Local) {
   // now we create an instance of your task
   mgr->ConnectInput(task, 0, mgr->GetCommonInputContainer());
   // same for the output
-  mgr->ConnectOutput(task, 1, mgr->CreateContainer(
-                                  "MyOutputContainer", AliO2Timeframe::Class(),
-                                  AliAnalysisManager::kOutputContainer,
-                                  fileName.Data()));
+  mgr->ConnectOutput(
+      task, 1, mgr->CreateContainer("AliO2Timeframe", O2Timeframe::Class(),
+                                    AliAnalysisManager::kOutputContainer,
+                                    fileName.Data()));
   AliAnalysisAlien *alienHandler = nullptr;
   TChain *chain = nullptr;
   if (mode != Local) {
@@ -72,33 +201,32 @@ int runConversion(Mode mode = Local) {
     alienHandler->SetAPIVersion("V1.1x");
     // select the input data
     // LHC11a10a_bis
-    alienHandler->SetGridDataDir("/alice/data/2011/LHC11h_2");
-    // esds than ESDs?
-    alienHandler->SetDataPattern("*ESDs/pass2/ESD145/*ESD.root");
+    alienHandler->SetGridDataDir("/alice/data/2010/LHC10h/");
+    alienHandler->SetDataPattern("ESDs/pass2/10000138275063.*/AliESDs.root");
     // MC has no prefix, data has prefix 000
     alienHandler->SetRunPrefix("000");
     // runnumber
-    alienHandler->AddRunNumber(167813);
+    alienHandler->AddRunNumber(runNumber);
     // number of files per subjob
-    alienHandler->SetSplitMaxInputFileNumber(10);
+    alienHandler->SetSplitMaxInputFileNumber(20);
     // alienHandler->SetExecutable("myTask.sh");
     // specify how many seconds your job may take
     alienHandler->SetTTL(10000);
     // alienHandler->SetJDLName("myTask.jdl");
 
     alienHandler->SetOutputToRunNo(kTRUE);
-    alienHandler->SetKeepLogs(kTRUE);
+    // alienHandler->SetKeepLogs(kTRUE);
     // merging: run with kTRUE to merge on grid
     // after re-running the jobs in SetRunMode("terminate")
     // (see below) mode, set SetMergeViaJDL(kFALSE)
     // to collect final results
-    alienHandler->SetMaxMergeStages(1);
-    alienHandler->SetMergeViaJDL(kTRUE);
+    alienHandler->SetMaxMergeStages(0);
+    alienHandler->SetMergeViaJDL(kFALSE);
 
     // define the output folders
     // can't set it to a folder because the JDL doesn't make nested folders.
-    alienHandler->SetGridWorkingDir("MyWorkDir");
-    alienHandler->SetGridOutputDir("MyOutDit");
+    alienHandler->SetGridWorkingDir(Form("Conversions_000%d", runNumber));
+    alienHandler->SetGridOutputDir("Output");
     // connect the alien plugin to the manager
     mgr->SetGridHandler(alienHandler);
   } else {
@@ -128,9 +256,10 @@ int runConversion(Mode mode = Local) {
     mgr->StartAnalysis("grid");
     break;
   case Terminate:
-    alienHandler->SetRunMode("terminate");
-    mgr->StartAnalysis("grid");
+    // faster and more reliable...
+    asyncGrab();
   }
+
   return 0;
 }
 

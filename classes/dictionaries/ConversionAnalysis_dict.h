@@ -75,7 +75,7 @@ extern G__linked_taginfo G__ConversionAnalysis_dictLN_TMatrixTSparseRowlEfloatgR
 extern G__linked_taginfo G__ConversionAnalysis_dictLN_TMatrixTSparseDiaglEfloatgR;
 extern G__linked_taginfo G__ConversionAnalysis_dictLN_AliAnalysisTaskSE;
 extern G__linked_taginfo G__ConversionAnalysis_dictLN_TRandom2;
-extern G__linked_taginfo G__ConversionAnalysis_dictLN_AliO2Timeframe;
+extern G__linked_taginfo G__ConversionAnalysis_dictLN_O2Timeframe;
 extern G__linked_taginfo G__ConversionAnalysis_dictLN_ConversionAnalysis;
 
 /* STUB derived class for protected member access */
