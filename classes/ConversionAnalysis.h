@@ -8,7 +8,7 @@
 #define CONVERSIONANALYSIS_H
 
 // Include the base classes
-#include <AliAnalysisTaskSE.h>
+#include <AliO2AnalysisTaskSE.h>
 
 #include "InterfaceTimestampped.h"
 #include <TRandom2.h>
@@ -18,7 +18,7 @@ class O2Timeframe;
 ///
 /// More detailed ConversionAnalysis description
 
-class ConversionAnalysis : public AliAnalysisTaskSE {
+class ConversionAnalysis : public AliO2AnalysisTaskSE {
 public:
   /// Default constructor
   ConversionAnalysis();

@@ -27,7 +27,7 @@ ClassImp(ConversionAnalysis);
 ConversionAnalysis::ConversionAnalysis() {}
 // named constructor
 ConversionAnalysis::ConversionAnalysis(const char *name)
-    : AliAnalysisTaskSE(name) {
+    : AliO2AnalysisTaskSE(name) {
   DefineInput(0, TChain::Class());
   DefineOutput(1, O2Timeframe::Class());
 }
@@ -57,6 +57,9 @@ void ConversionAnalysis::UserExec(Option_t *option) {
   timestamp_t offset = 0;
   while (0 == eventsOnQueue) {
     eventsOnQueue = rng.Poisson(mu);
+    if (eventsOnQueue > 1) {
+      report(WARN, "Created pileup!");
+    }
     offset += 25;
   }
   currentTimestamp += offset;

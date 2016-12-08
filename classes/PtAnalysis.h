@@ -1,31 +1,32 @@
-/// \file TestTask.h
+/// \file PtAnalysis.h
 /// \author R.G.A. Deckers
-/// \brief Definition of the TestTask class.
+/// \brief Definition of the PtAnalysis class.
 ///
 /// See implementation file for copyright details.
 
-#ifndef TestTask_H
-#define TestTask_H
+#ifndef PtAnalysis_H
+#define PtAnalysis_H
 
 // Include the base classes
 #include <AliO2AnalysisTaskSE.h>
 
 #include "InterfaceTimestampped.h"
 #include <TRandom2.h>
+#include <TRefArray.h>
 
 class O2Timeframe;
-/// Short TestTask description
+/// Short PtAnalysis description
 ///
-/// More detailed TestTask description
+/// More detailed PtAnalysis description
 
-class TestTask : public AliO2AnalysisTaskSE {
+class PtAnalysis : public AliO2AnalysisTaskSE {
 public:
   /// Default constructor
-  TestTask();
+  PtAnalysis();
   /// Named constructor
-  TestTask(const char *name);
+  PtAnalysis(const char *name);
   /// Destructor
-  ~TestTask();
+  ~PtAnalysis();
   // intialization
   virtual void UserCreateOutputObjects();
   // per event
@@ -38,12 +39,14 @@ protected:
 
 private:
   /// copy constructor prohibited
-  TestTask(const TestTask &);
+  PtAnalysis(const PtAnalysis &);
   /// assignment operator prohibited
-  TestTask &operator=(const TestTask &);
-  O2Timeframe *mResults = nullptr; //!
+  PtAnalysis &operator=(const PtAnalysis &);
+  std::vector<TH1F *> mHistograms;
+  TList *mList;
+  // TH1F *mHistogram = nullptr; //!
   // root specific
-  ClassDef(TestTask, 1);
+  ClassDef(PtAnalysis, 1);
 };
 
 #endif

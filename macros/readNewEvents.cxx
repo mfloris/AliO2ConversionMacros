@@ -36,10 +36,6 @@ int readNewEvents(int argc, char **filenames) {
     // std::cout << directory->ClassName() << std::endl;
     directory->ls();
     // this line leaks memory
-    TList *keys = file->GetListOfKeys();
-    report(INFO, "file contains %d entries", keys->GetEntries());
-    TIter next(keys);
-    TKey *key;
     // while ((key = (TKey *)next())) {
     O2Timeframe *container =
         dynamic_cast<O2Timeframe *>(directory->Get("O2Timeframe"));
@@ -48,25 +44,27 @@ int readNewEvents(int argc, char **filenames) {
       return -1;
     }
     container->WriteToFile("testfile.bin");
-    size_t event_count = container->getNumberOfEvents();
-    std::cout << "Timeframe contains " << event_count << " events\n";
-    for (size_t i = 0; i < event_count; i++) {
-      O2Event event = container->getEvent(i);
-      if (event.GetNumberOfAmbigousTracks()) {
-        printf("%lu %f\n Total: %lu, %lu, %lu\n Global: %lu, %lu, %lu\nITS: "
-               "%lu,"
-               "%lu, %lu\n",
-               i, event.getTimestamp(), event.GetNumberOfTracks(),
-               event.GetNumberOfUnambigousTracks(),
-               event.GetNumberOfAmbigousTracks(),
-               event.GetNumberOfGlobalTracks(),
-               event.GetNumberOfUnambigousGlobalTracks(),
-               event.GetNumberOfAmbigousGlobalTracks(),
-               event.GetNumberOfITSTracks(),
-               event.GetNumberOfUnambigousITSTracks(),
-               event.GetNumberOfAmbigousITSTracks());
-      }
-    }
+    report(PASS, "estimated compressed size: %lu",
+           container->estimate_compression());
+    // size_t event_count = container->getNumberOfEvents();
+    // std::cout << "Timeframe contains " << event_count << " events\n";
+    // for (size_t i = 0; i < event_count; i++) {
+    //   O2Event event = container->getEvent(i);
+    //   if (event.GetNumberOfAmbigousTracks()) {
+    //     printf("%lu %f\n Total: %lu, %lu, %lu\n Global: %lu, %lu, %lu\nITS: "
+    //            "%lu,"
+    //            "%lu, %lu\n",
+    //            i, event.getTimestamp(), event.GetNumberOfTracks(),
+    //            event.GetNumberOfUnambigousTracks(),
+    //            event.GetNumberOfAmbigousTracks(),
+    //            event.GetNumberOfGlobalTracks(),
+    //            event.GetNumberOfUnambigousGlobalTracks(),
+    //            event.GetNumberOfAmbigousGlobalTracks(),
+    //            event.GetNumberOfITSTracks(),
+    //            event.GetNumberOfUnambigousITSTracks(),
+    //            event.GetNumberOfAmbigousITSTracks());
+    //   }
+    // }
     delete container;
     //}
     delete (file);

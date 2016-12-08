@@ -85,84 +85,19 @@ void asyncGrab(/*TGridResult *directories*/) {
     report(INFO, "Child %d exited with %d", i, return_code);
   }
   report(PASS, "Children finished");
-  // handles for the async connections
-  // TFileOpenHandle *handles[simultanious_connections];
-  // // how many connections we have started
-  // int initiated_connections;
-  // // Start up to simultanious_connections.
-  // for (initiated_connections = 0;
-  //      (initiated_connections < simultanious_connections) &&
-  //      (initiated_connections < nEntries);
-  //      initiated_connections++) {
-  //   TString filename =
-  //   TString(directories->GetFileName(initiated_connections))
-  //                          .Append("/AnalysisResults.root")
-  //                          .Prepend(basedir);
-  //   handles[initiated_connections] = TAlienFile::AsyncOpen(filename);
-  //   if (!handles[initiated_connections]) {
-  //     report(WARN, "Couldn't acces %s", filename.Data());
-  //   }
-  // }
-  // // Wait for the connections to finisih, in order.
-  // for (int finisished_connections = 0; finisished_connections < nEntries;
-  //      finisished_connections++) {
-  //   report(INFO, "opening %s",
-  //          directories->GetFileName(finisished_connections));
-  //   // Will block until the file has been recieved from AliEn
-  //   TFile *inputFile =
-  //       TFile::Open(handles[finisished_connections %
-  //       simultanious_connections]);
-  //   // If we still have connections to make, immidiatly add a new one in the
-  //   // comsumed slot.
-  //   if (initiated_connections < nEntries) {
-  //     TString filename =
-  //         TString(directories->GetFileName(initiated_connections))
-  //             .Append("/AnalysisResults.root")
-  //             .Prepend(basedir);
-  //     handles[initiated_connections % simultanious_connections] =
-  //         TAlienFile::AsyncOpen(filename);
-  //     if (!handles[initiated_connections % simultanious_connections]) {
-  //       report(WARN, "Couldn't acces %s", filename.Data());
-  //     }
-  //     initiated_connections += 1;
-  //   }
-  //   if (!inputFile) {
-  //     report(FAIL, "Couldn't open %s",
-  //            directories->GetFileName(finisished_connections));
-  //     continue;
-  //   } else {
-  //     report(PASS, "Opened %s",
-  //            directories->GetFileName(finisished_connections));
-  //   }
-  //   // open an output file
-  //   TFile *outputFile =
-  //       TFile::Open(Form("AnalysisResults_000%d.root", runNumber), "update");
-  //   // fetch the timeframe for the netfile and write it to the output file.
-  //   inputFile->GetDirectory("MyTask")->Get("O2Timeframe")->Write();
-  //   report(PASS, "Saved %s",
-  //   directories->GetFileName(finisished_connections));
-  //   // Show the current structure of the output file.
-  //   outputFile->ls();
-  //   // close the files
-  //   delete inputFile;
-  //   delete outputFile;
-  // }
 }
 
 // based on RBertens tutorial
-class test : public InterfaceTimestampped {};
-class test2 : public virtual InterfaceTimestampped {};
-/// /alice/data/2010/LHC10b/000117042/ESDs/pass3/10000117042035.230/.root
-const TString localESDFile("./AliESDs.root");
+const TString
+    localESDFile("/home/roel/alice/data/2010/LHC10h/000138275/ESDs/pass2/"
+                 "10000138275063.80/AliESDs.root");
 enum Mode { Local, Grid, TestGrid, Terminate };
 
 /// Converts existing ESDs into AliO2Timeframes
 ///
 /// \param mode Determines in what mode the conversion script runs.
 /// \return returns 0 on success
-int runConversion(Mode mode = Terminate) {
-  report(INFO, "%lu, %lu , %lu", sizeof(InterfaceTimestampped), sizeof(test),
-         sizeof(test2));
+int runConversion(Mode mode = Local) {
   // create the analysis manager
   AliAnalysisManager *mgr = new AliAnalysisManager("AnalysisTaskExample");
   AliESDInputHandler *ESDH = new AliESDInputHandler();
