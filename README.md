@@ -8,6 +8,7 @@ Install the Aliroot/aliphysics branch for the O2 AOD developement
 ```
 aliBuild init AliRoot,AliPhysics -z ali-aod-dev
 ```
+
 2. Manually change the aliroot and aliphysics branch to the AOD developement branch
 ```bash
 $ cd ali-aod-dev/AliPhysics
@@ -15,6 +16,7 @@ $ git checkout aod-upgrade
 $ cd ../AliRoot
 $ git checkout aod-upgrade
 ```
+
 3. Complile
 ```
 $ aliBuild -j 2 -z -w ../sw build AliPhysics
