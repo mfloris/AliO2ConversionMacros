@@ -26,4 +26,7 @@ Experimental conversion macro for creating new AoDs from old data for the ALICE'
    
 ### Install custom macros to produce the new AODs
 
-Clone https://github.com/RDeckers/AliO2ConversionMacros.git  
+Clone https://github.com/RDeckers/AliO2ConversionMacros and compile with make
+```
+$ git clone https://github.com/RDeckers/AliO2ConversionMacros.git  
+$ make
