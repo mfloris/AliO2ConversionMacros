@@ -4,6 +4,7 @@ REPORT = @echo "\033[4;1;37m$1\033[0m"
 CHK_DIR_EXISTS = test -d $1 || mkdir -p $1
 NUKE = rm -r $1
 COPY_DIR = cp -rv $1 $2
+MV = cp -v $1 $2
 LIB_SUFFIX :=.so
 
 PROJECT_DIR :=$(dir $(realpath $(lastword $(MAKEFILE_LIST))))
@@ -30,9 +31,9 @@ BINARIES := $(patsubst $(MACRO_DIR)/%.cxx, $(BIN_DIR)/%,$(MACROS))
 
 ALL_OBJ := $(CLASSES_OBJ) $(COMMON_MACROS_OBJ) $(MACROS_OBJ) $(DICTIONARY_OBJ)
 
-CPP_FLAGS := $(shell root-config --cflags) -fopenmp -fPIC -g -fno-omit-frame-pointer -O2 -pipe -march=native -I $(CLASS_DIR) -I $(COMMON_MACRO_DIR) -I $$ALICE_ROOT/include -I $$ALICE_PHYSICS/include
-LD_FLAGS := --std=c++11 -fopenmp -lESD -lEG -lGeom -lMinuit -lVMC -lXMLParser -lTreePlayer -lXMLIO -lSTEERBase -lANALYSIS -lAOD -lANALYSISalice -lANALYSISaliceBase -lO2 -lboost_system -lboost_filesystem
-LD_FLAGS += $(shell root-config --glibs) -L $$ALICE_ROOT/lib -L $$ALICE_PHYSICS/lib
+CPP_FLAGS := $(shell root-config --cflags) -fopenmp -fPIC -g -fno-omit-frame-pointer -O2 -pipe -march=native -I $(CLASS_DIR) -I $(COMMON_MACRO_DIR) -I $$ALICE_ROOT/include
+LD_FLAGS := --std=c++11 -lESD -lEG -lGeom -lMinuit -lVMC -lXMLParser -lTreePlayer -lXMLIO -lSTEERBase -lANALYSIS -lAOD -lANALYSISalice -lANALYSISaliceBase -lO2 -lboost_system -lboost_filesystem
+LD_FLAGS += $(shell root-config --glibs) -L $$ALICE_ROOT/lib
 LD_FLAGS += -L ~/lib -lutilities
 
 .SECONDARY: $(ALL_OBJ)
@@ -68,7 +69,9 @@ $(OBJ_DIR)/macros/common/%.o: $(MACRO_DIR)/common/%.cxx
 
 $(DICTIONARY_DIR)/%_dict.cxx: $(CLASS_DIR)/%.h $(DICTIONARY_DIR)/%_LinkDef.h
 	$(call REPORT,Creating dictionary $@)
-	rootcint -f $@ -c -I$(CLASS_DIR) -I$(COMMON_MACRO_DIR) -I$$ALICE_ROOT/include -I$$ALICE_PHYSICS/include  -p $^
+	rootcling -f $@ -c -I$(CLASS_DIR) -I$(COMMON_MACRO_DIR) -I$$ALICE_ROOT/include  -p $^
+	$(call CHK_DIR_EXISTS, $(BIN_DIR))
+	mv $(patsubst $(DICTIONARY_DIR)/%_dict.cxx, $(DICTIONARY_DIR)/%_dict_rdict.pcm,$@) $(BIN_DIR)
 
 clean:
 	$(call REPORT,Cleaning...)

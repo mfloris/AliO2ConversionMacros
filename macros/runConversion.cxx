@@ -19,12 +19,12 @@
 #include <AliAnalysisManager.h>
 #include <AliESDInputHandler.h>
 #include <AliVEventHandler.h>
+#include <O2logging.h>
 #include <TAlienFile.h>
 #include <TChain.h>
 #include <TGrid.h>
 #include <TGridResult.h>
 #include <sys/wait.h>
-#include <utilities/logging.h>
 
 const int runNumber = 138275;
 

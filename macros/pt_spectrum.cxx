@@ -20,11 +20,11 @@
 #include <AliESDInputHandler.h>
 #include <AliO2AnalysisManager.h>
 #include <AliO2InputHandler.h>
+#include <O2logging.h>
 #include <boost/filesystem.hpp>
 #include <list>
 #include <string>
 #include <sys/wait.h>
-#include <utilities/logging.h>
 
 /// /alice/data/2010/LHC10b/000117042/O2s/pass3/10000117042035.230/.root
 const std::string localO2File = "/home/roel/alice/data/timeframes/";
