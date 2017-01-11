@@ -22,4 +22,8 @@ Experimental conversion macro for creating new AoDs from old data for the ALICE'
    ```
    $ aliBuild -j 2 -z -w ../sw build AliPhysics
    ```
+   
+   
 ### Install custom macros to produce the new AODs
+
+Clone https://github.com/RDeckers/AliO2ConversionMacros.git  
