@@ -18,6 +18,7 @@
 #include <TFile.h>
 #include <TH1F.h>
 #include <TImage.h>
+#include <TLegend.h>
 #include <TList.h>
 #include <TStyle.h>
 /// Short makePtPlots description
@@ -36,92 +37,154 @@ void makePtPlots() {
       (TH1F *)TimeframeList->At(0), (TH1F *)TimeframeList->At(1),
       (TH1F *)TimeframeList->At(2), (TH1F *)TimeframeList->At(3),
       (TH1F *)TimeframeList->At(4), (TH1F *)TimeframeList->At(5)};
-
+  for (unsigned u = 0; u < 6; u++) {
+    TimeframeHistograms[u]->SetStats(kFALSE);
+  }
+  for (unsigned u = 0; u < 3; u++) {
+    ESDsHistograms[u]->SetStats(kFALSE);
+  }
   gStyle->SetPalette(70);
+  ESDsHistograms[2]->SetLineColor(kBlack);
+  TimeframeHistograms[2]->SetLineColor(kRed);
+  TimeframeHistograms[5]->SetLineColor(kBlue);
+  TLegend *leg = new TLegend(0.9, 0.7, 0.48, 0.9);
+  leg->AddEntry(ESDsHistograms[2], "ESD results", "lep");
+  leg->AddEntry(TimeframeHistograms[2],
+                "Timeframe using any associatable track", "lep");
+  leg->AddEntry(TimeframeHistograms[5], "Using only unambigous tracks", "lep");
   // create a new canvas to paint onto
-  TCanvas *canvas = new TCanvas("c1", "", 0, 0, 1280, 720);
-  // canvas->SetLogy();
+  TCanvas *canvas = new TCanvas("c1", "PLC ][", 128, 72, 1280, 720);
   // h->FillRandom("gaus", 10000);
   // ESDsHistograms[0]->Draw();
   TImage *img = TImage::Create();
+  // PLC ][ SAME for all bins & histos.
+  // Int_t binwidth = TimeframeHistograms[0]->GetXaxis()->GetBinWidth(1);
+  TH1F tmp = *TimeframeHistograms[1];
+  tmp.SetAxisRange(0, 3, "X");
+  tmp.SetAxisRange(0, 1, "Y");
+  tmp.GetXaxis()->SetTitle("Pt");
+  tmp.GetYaxis()->SetTitle("dN/dPt");
+  tmp.SetLineColor(kRed);
+  tmp.Scale(1 / ESDsHistograms[0]->Integral());
+  tmp.Draw("PLC ][ SAME");
+  //
+  TH1F tmp2 = *TimeframeHistograms[2];
+  tmp2.SetLineColor(kRed);
+  tmp2.Scale(1 / ESDsHistograms[0]->Integral());
+  tmp2.Draw("PLC ][ SAME");
+  //
+  TH1F tmp3 = *TimeframeHistograms[4];
+  tmp3.SetLineColor(kBlue);
+  tmp3.Scale(1 / ESDsHistograms[0]->Integral());
+  tmp3.Draw("PLC ][ SAME");
 
-  TimeframeHistograms[1]->SetAxisRange(0, 3, "X");
+  TH1F tmp4 = *TimeframeHistograms[5];
+  tmp4.SetLineColor(kBlue);
+  tmp4.Scale(1 / ESDsHistograms[0]->Integral());
+  tmp4.Draw("PLC ][ SAME");
+
+  TH1F tmp5 = *ESDsHistograms[1];
+  tmp5.Scale(1 / ESDsHistograms[0]->Integral());
+  tmp5.SetLineColor(kBlack);
+  tmp5.Draw("PLC ][ SAME");
+  TH1F tmp6 = *ESDsHistograms[2];
+  tmp6.Scale(1 / ESDsHistograms[0]->Integral());
+  tmp6.SetLineColor(kBlack);
+  tmp6.Draw("PLC ][ SAME");
+  leg->Draw();
+  canvas->Update();
+  img->FromPad(canvas);
+  // Tracks, normalized for total track count ESD
+  img->WriteImage("Results.png");
+  delete canvas;
+
+  // Normalize each track individually
+  for (unsigned u = 0; u < 6; u++) {
+    TimeframeHistograms[u]->Scale(1 / TimeframeHistograms[u]->Integral());
+  }
+  for (unsigned u = 0; u < 3; u++) {
+    ESDsHistograms[u]->Scale(1 / ESDsHistograms[u]->Integral());
+  }
+
+  canvas = new TCanvas("c1", "PLC ][", 0, 0, 1280, 720);
+  // canvas->SetLogy();
+  ESDsHistograms[1]->SetLineColor(kBlack);
+  ESDsHistograms[1]->SetAxisRange(0.05, 0.5, "X");
+  ESDsHistograms[1]->GetXaxis()->SetTitle("Pt");
+  ESDsHistograms[1]->GetYaxis()->SetTitle("dN/dPt");
+  ESDsHistograms[1]->Draw("");
   TimeframeHistograms[1]->SetLineColor(kRed);
-  TimeframeHistograms[1]->Draw("");
+  TimeframeHistograms[1]->Draw("SAME");
+  TimeframeHistograms[4]->SetLineColor(kBlue);
+  TimeframeHistograms[4]->Draw("SAME");
+  leg->Draw();
+  canvas->Update();
+  img->FromPad(canvas);
+  // normalized global tracks
+  img->WriteImage("Global.png");
+  delete canvas;
+
+  canvas = new TCanvas("c1", "", 0, 0, 1280, 720);
+  // canvas->SetLogy();
+  ESDsHistograms[2]->SetAxisRange(0.05, 0.5, "X");
+  ESDsHistograms[2]->SetLineColor(kBlack);
+  ESDsHistograms[2]->GetXaxis()->SetTitle("Pt");
+  ESDsHistograms[2]->GetYaxis()->SetTitle("dN/dPt");
+  ESDsHistograms[2]->Draw("");
   TimeframeHistograms[2]->SetLineColor(kRed);
   TimeframeHistograms[2]->Draw("SAME");
-
-  ESDsHistograms[1]->SetLineColor(kBlack);
-  ESDsHistograms[2]->SetLineColor(kBlack);
-  ESDsHistograms[1]->Draw("SAME");
-  ESDsHistograms[2]->Draw("SAME");
-
-  // h->FillRandom("gaus", 10000);
-  //  TimeframeHistograms[0]->Draw();
-
-  TimeframeHistograms[4]->SetLineColor(kBlue);
   TimeframeHistograms[5]->SetLineColor(kBlue);
-  TimeframeHistograms[4]->Draw("SAME");
   TimeframeHistograms[5]->Draw("SAME");
+  leg->Draw();
 
   canvas->Update();
   img->FromPad(canvas);
-  img->WriteImage("Results.png");
-
+  img->WriteImage("ITS.png");
   delete canvas;
-  canvas = new TCanvas("c1", "", 0, 0, 1280, 720);
+  // h->FillRandom("gaus", 10000);
+  //  TimeframeHistograms[0]->Draw();
 
+  canvas = new TCanvas("c1", "PLC ][", 0, 0, 1280, 720);
   // everything, global
-  TimeframeHistograms[1]->SetAxisRange(0.8, 1.2, "Y");
+  TimeframeHistograms[1]->SetAxisRange(0.05, 1, "X");
   TimeframeHistograms[1]->Divide(ESDsHistograms[1]);
+  // Ratio of TF global tracks over ESD global tracks
   TimeframeHistograms[1]->SetLineColor(kRed);
-  TimeframeHistograms[1]->Draw("SAME");
+  TimeframeHistograms[1]->GetXaxis()->SetTitle("Pt");
+  TimeframeHistograms[1]->GetYaxis()->SetTitle("dN/dPt ratio Timeframe/ESDs");
+  TimeframeHistograms[1]->Draw("][ SAME ");
 
-  TH1F tmp = *TimeframeHistograms[4];
+  tmp = *TimeframeHistograms[4];
+  tmp.SetStats(kFALSE);
   tmp.Divide(ESDsHistograms[1]);
   tmp.SetLineColor(kBlue);
-  tmp.Draw("SAME");
+  tmp.Draw("][ SAME");
+  leg->Draw();
   canvas->Update();
   img->FromPad(canvas);
   img->WriteImage("ratio_global.png");
   delete canvas;
-  canvas = new TCanvas("c1", "", 0, 0, 1280, 720);
+  canvas = new TCanvas("c1", " ][", 0, 0, 1280, 720);
 
   // TimeframeHistograms[2]->Add(ESDsHistograms[2], -1);
-  TimeframeHistograms[2]->SetAxisRange(0.0, 1, "X");
-  TimeframeHistograms[2]->SetAxisRange(0.5, 1.5, "Y");
+  TimeframeHistograms[2]->SetAxisRange(0.05, 1, "X");
+  // ratio of ITS track
   TimeframeHistograms[2]->Divide(ESDsHistograms[2]);
   TimeframeHistograms[2]->SetLineColor(kRed);
-  TimeframeHistograms[2]->Draw("SAME");
+  TimeframeHistograms[2]->GetXaxis()->SetTitle("Pt");
+  TimeframeHistograms[2]->GetYaxis()->SetTitle("dN/dPt ratio Timeframe/ESDs");
+  TimeframeHistograms[2]->Draw("][ SAME");
 
   tmp = *TimeframeHistograms[5];
   // tmp.Add(TimeframeHistograms[5], -1);
   tmp.Divide(ESDsHistograms[2]);
+  tmp.SetStats(kFALSE);
   tmp.SetLineColor(kBlue);
-  tmp.Draw("SAME");
+  tmp.Draw("][ SAME");
+  leg->Draw();
   canvas->Update();
   img->FromPad(canvas);
   img->WriteImage("ratio ITS.png");
-  //
-  // c1->Clear();
-  // c1->SetLogy(0);
-  // TH2F *h2 = analysisTask->getRelMomentum2DHist();
-  // TObjArray aSlices;
-  // h2->FitSlicesY(0, 0, -1, 0, "QNR", &aSlices);
-  // // h2->FitSlicesX();//Doesn't work, can't us gDirertory(h2_1) in compiled
-  // mode at least https
-  //     : //
-  //     root.cern.ch/doc/master/classTH2.html#a9bfd1ea19dee46c25861d58ee60eaa3d
-  //       TH1D *h2_1 = (TH1D *)aSlices[1]; // Mean
-  // if (!h2_1) {
-  //   report(FAIL, "Failed to open fitted histogram!");
-  // }
-  // // without col it just draws dots, does this mean it stores all the events?
-  // h2_1->Draw("colz");
-  // c1->Update();
-  // img->FromPad(c1);
-  // img->WriteImage("canvas2.png");
-  // report(PASS, "Made image 2");
 }
 
 #ifndef __CINT__

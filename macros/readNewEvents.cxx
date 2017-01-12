@@ -15,12 +15,12 @@
 
 #include "O2Event.h"
 #include "O2Timeframe.h"
+#include <O2logging.h>
 #include <TFile.h>
 #include <TKey.h>
 #include <TList.h>
 #include <TObject.h>
 #include <iostream>
-#include <utilities/logging.h>
 /// Reads events from the new timeframe format
 ///
 /// Prints an overview of the tracks and the timestamp for events which contain

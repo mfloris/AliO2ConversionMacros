@@ -20,8 +20,8 @@
 #include <AliESDtrack.h>
 #include <AliLog.h>
 #include <AliO2Event.h>
+#include <O2logging.h>
 #include <TChain.h>
-#include <utilities/logging.h>
 // root specific
 ClassImp(PtAnalysis);
 
@@ -100,10 +100,4 @@ void PtAnalysis::UserExec(Option_t *option) {
   PostData(1, mList);
 }
 // Cleanup
-void PtAnalysis::Terminate(Option_t *option) {
-  // Double_t scale =
-  //     mHistogram->GetXaxis()->GetBinWidth(1) / *(mHistogram->GetIntegral());
-  // mHistogram->Scale(scale);
-  // PostData(1, mHistograms);
-  // report(WARN, "Terminate CALLED");
-}
+void PtAnalysis::Terminate(Option_t *option) {}
