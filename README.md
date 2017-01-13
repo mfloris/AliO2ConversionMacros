@@ -5,13 +5,18 @@ Experimental conversion macro for creating new AoDs from old data for the ALICE'
 
 ### Install the Aliroot branch for the O2 AOD developement
 
-These are the minimum install requirements to run thise repository, there is also an AliPhysics branch for the AOD upgrade but it is not needed for now & contains no changes.
+These are the minimum install requirements to run thise repository, there is also an AliPhysics branch for the AOD upgrade but it is not needed for now & contains no changes. **TODO**: I would install the full stack: if you want to run analysis, you will need classes from AliPhysics, even if there are no differences for the moment.
+
+AliRoot and AliPhysics should be compiled against ROOT6.
 
 1. Init alibuild with a separate folder
    ```bash
    aliBuild init AliRoot -z ali-aod-dev
    ```
-
+**TODO**: also set alyphysics as a developement package: 
+```
+aliBuild init AliRoot,AliPhysics -z ali-aod-dev
+```
 2. Manually change the aliroot branch to the AOD developement branch
    ```bash
    $ cd ali-aod-dev/AliRoot
@@ -20,9 +25,9 @@ These are the minimum install requirements to run thise repository, there is als
 
 3. Compile
 Currently, the AliDist recipe does not correctly pull in the right version of gcc if the system's version is too new (as happens with e.g. Ubuntu). If compilation fails due to an incorrect version of gcc it is recommended to use clang (or an older gcc version) instead. On ubuntu the default c++ compiler can be set with the command
-```bash
+   ```bash
    sudo update-alternatives --config c++ 
-```
+   ```
 
 Compilation of Root6 might also fail if CPLUS_INCLUDE_PATH or C_INCLUDE_PATH are set as is the case when one is in a 'alienv enter' shell. To fix this run 
 ```bash
@@ -35,7 +40,18 @@ Finally, to actually install AliRoot, run:
    ```bash
    $ aliBuild -j 6 -z -w ../sw build AliRoot --disable GEANT3,GEANT4_VMC,fastjet
    ```
-   
+   **TODO**:
+   Should build with root6. Something like 
+   ```
+   aliBuild -d --defaults ROOT6 -j 2 -z -w ../sw build AliPhysics
+   ```
+   Gets stuck. To be clarified why.
+   Temporary workaround: pull root manually. E.g.:
+   ```
+   cd ali-aod-dev 
+   git clone -b v6-08-02 --depth 1 http://root.cern.ch/git/root.git 
+
+   ```
 ### Install custom macros to produce the new AODs
 
 Clone https://github.com/RDeckers/AliO2ConversionMacros and compile with make
