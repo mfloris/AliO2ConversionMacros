@@ -84,8 +84,9 @@ Unfortunately, they currently contain hardcoded paths and will therefore not run
 4. The make_pt_plots script will produce the plots
 
 The basic usage would be 
+```
 1. getFilesFromGrid <folder> <pattern> <output directory> //where folder 
 and patter follow 'find' syntax. 
 2. ptSpectrum <output directory>*ESD*.root 
 3. makePtPlots 
-
+```
