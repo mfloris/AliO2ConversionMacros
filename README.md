@@ -10,15 +10,18 @@ These are the minimum install requirements to run thise repository, there is als
 AliRoot and AliPhysics should be compiled against ROOT6.
 
 1. Init alibuild with a separate folder, set both aliphyscs and aliroot as developement packages
+
    ```
    aliBuild init AliRoot,AliPhysics -z ali-aod-dev
    ```
 2. Manually change the aliroot branch to the AOD developement branch
+
    ```bash
    $ cd ali-aod-dev/AliRoot
    $ git checkout aod-upgrade
    ```
 3. Checkout root 6 manually   
+
    ```
    cd ali-aod-dev 
    git clone -b v6-08-02 --depth 1 http://root.cern.ch/git/root.git 
@@ -27,12 +30,16 @@ AliRoot and AliPhysics should be compiled against ROOT6.
    This is a temporary workaround: it should be possible to use alibuild's defaults (see below)
    
 3. Compile
+
    Currently, the AliDist recipe does not correctly pull in the right version of gcc if the system's version is too new (as happens with e.g. Ubuntu). If compilation fails due to an incorrect version of gcc it is recommended to use clang (or an older gcc version) instead. On ubuntu the default c++ compiler can be set with the command
+   
    ```bash
    sudo update-alternatives --config c++ 
    ```
 4. Troubleshoot 
+
    Compilation of Root6 might also fail if CPLUS_INCLUDE_PATH or C_INCLUDE_PATH are set as is the case when one is in a 'alienv enter' shell. To fix this run 
+   
    ```bash
    unset CPLUS_INCLUDE_PATH
    unset C_INCLUDE_PATH
