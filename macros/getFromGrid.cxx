@@ -23,10 +23,12 @@
 const char *DEFAULT_PATTERN = "*";
 const char *DEFAULT_OUT = ".";
 
-void asyncGrab(const char *directory, const char *pattern = DEFAULT_PATTERN,
-               const char *outputDirectory = DEFAULT_OUT) {
-  // How many connections we try and keep open at a given time.
-  const unsigned simultanious_connections = 64;
+void asyncGrab(const char *directory,
+               const char *pattern = DEFAULT_PATTERN,
+               const char *outputDirectory = DEFAULT_OUT,
+               const unsigned simultanious_connections = 1   // How many connections we try and keep open at a given time.
+               ) {
+
   pid_t child_pid[simultanious_connections];
   Int_t active_children = 0;
   int return_code;
@@ -54,9 +56,16 @@ void asyncGrab(const char *directory, const char *pattern = DEFAULT_PATTERN,
           continue;
         }
         const char *file_out = dirStart + strlen(directory);
-        TString outputfile = Form("%s%s", outputDirectory, file_out);
-        boost::filesystem::create_directories(
+        TString outputfile = Form("%s/%s", outputDirectory, file_out);        
+        report(INFO, "saving to file: [%s]",outputfile.Data());
+        try {
+          boost::filesystem::create_directories(
             gSystem->DirName(gSystem->ExpandPathName(outputfile.Data())));
+        }
+        catch (std::exception const & ex){
+          report(FAIL, "Cannot create folders for file: %s", outputfile.Data());
+          exit(1);
+        }
         Bool_t result = TFile::Cp(turl, outputfile.Data(), kFALSE);
         if (!result) {
           report(FAIL, "failed to copy %s to %s", turl, outputfile.Data());
@@ -93,20 +102,22 @@ enum Mode { Local, Grid, TestGrid, Terminate };
 /// (recusively) if it doesn't exist.
 /// \return returns 0 on success
 int runConversion(const char *folder, const char *pattern = DEFAULT_PATTERN,
-                  const char *output = DEFAULT_OUT) {
+                  const char *output = DEFAULT_OUT, const unsigned simultanious_connections = 64) {
   // create the analysis manager
   // asyncGrab("/alice/data/2010/LHC10h/000138275/ESDs/pass2/",
   //           "10000138275063.*/AliESDs.root", "~/alice/data2/");
-  asyncGrab(folder, pattern, output);
+  asyncGrab(folder, pattern, output, simultanious_connections);
   return 0;
 }
 
 #ifndef __CINT__
 int main(int argc, char **argv) {
   if (argc == 1) {
-    report(FAIL, "usage: getFromGrid <folder> [pattern] [output directory]");
+    report(FAIL, "usage: getFromGrid <folder> [pattern] [output directory] [async-connections]");
   }
-  return runConversion(argv[1], argc >= 3 ? argv[2] : DEFAULT_PATTERN,
-                       argc >= 4 ? argv[3] : DEFAULT_OUT);
+  return runConversion(argv[1],
+                       argc >= 3 ? argv[2] : DEFAULT_PATTERN,
+                       argc >= 4 ? argv[3] : DEFAULT_OUT,
+                       argc >= 5 ? atoi (argv[4]) : 64);
 }
 #endif
