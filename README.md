@@ -67,7 +67,13 @@ $ git clone https://github.com/RDeckers/AliO2ConversionMacros.git
 $ make
 ```
 
-This will produce executable versions of the scripts in the macros folder
+This will produce executable versions of the scripts in the macros folder.
+
+Note: on OSx you may need to install clang with home brew:
+```
+    brew install clang
+```
+
 
 ## How to use the code
 
