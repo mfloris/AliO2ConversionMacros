@@ -72,21 +72,11 @@ This will produce executable versions of the scripts in the macros folder
 ## How to use the code
 
 After running make, several executables are placed in ./bin/
-Unfortunately, they currently contain hardcoded paths and will therefore not run without modification. This wil be fixed soon^tm  .
+Because the code depends on modifications to AliRoot which are not on the grid the analysis tasks can only be run locally.
+The executable getFromGrid is a wrapper around aliensh's find command which can be used to fetch multiple files from the grid in parallel based on a {folder}/{pattern} combination similiar to the 'find' command.
 
-1. Download some ESDs (or use it online) TODO: remove hardcoded values and clarify this part
-2. Run the runConversion script 
-3. Run pt_spectrum TODO: check naming conistency in the script
-   * This runs the analysis tast (it's the usual "Steering" macro)
-   * It runs the "PtAnalysis.cxx" analysis task
-   * This produces the histogram as output
-   * This actually run twice: once on the O2 time frome and the other time on the "old" ESDs TODO: remove hardcoded parts
-4. The make_pt_plots script will produce the plots
+ Once you have some ESDs availible, you can run a pt-spectrum analysis over them using the ptSpectrum executable. This will produce two root files containing the pt-spectrum computed using the original ESDs as well as one containing the spectrum computed using the timeframe (which is dynamically build from the given ESDs). Plots can be created by running makePtPlots afterwards.
 
-The basic usage would be 
-```
-1. getFilesFromGrid <folder> <pattern> <output directory> //where folder 
-and patter follow 'find' syntax. 
-2. ptSpectrum <output directory>*ESD*.root 
-3. makePtPlots 
-```
+There is also the executable runConversion, this executable takes a list of ESDs as argument and builds a single timeframe based on the data of the ESDs. 
+
+readNewEvents shows how to read back the data created using runConversion. It takes as argument a list of .root files produced by runConversion.

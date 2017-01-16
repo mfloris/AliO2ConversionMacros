@@ -1,5 +1,5 @@
-/// \file runConversion.Cxx
-/// \brief implementation of the runConversion macro.
+/// \file ptSpectrum.Cxx
+/// \brief implementation of the ptSpectrum macro.
 /// \since 2016-11-16
 /// \author R.G.A. Deckers
 /// \copyright
@@ -33,7 +33,7 @@ const std::string localO2File = "/home/roel/alice/data/timeframes/";
 ///
 /// \param mode Determines in what mode the conversion script runs.
 /// \return returns 0 on success
-int runConversion(const char **files, int nFiles) {
+int ptSpectrum(const char **files, int nFiles) {
   // create the analysis manager
   AliO2AnalysisManager *mgr = new AliO2AnalysisManager("AnalysisTaskExample");
 
@@ -41,29 +41,17 @@ int runConversion(const char **files, int nFiles) {
   mgr->SetInputEventHandler(ESDH);
 
   // create an instance of your analysis task
-  ConversionAnalysis *conversionTask =
-      new ConversionAnalysis("Conversion Analysis");
-  if (nullptr == conversionTask) {
-    return -1;
-  }
-  // create an instance of your analysis task
   PtAnalysis *ptAnalysisTask = new PtAnalysis("Pt Analysis");
   if (nullptr == ptAnalysisTask) {
     return -1;
   }
   mgr->ConnectInput(ptAnalysisTask, 0, mgr->GetCommonInputContainer());
-  mgr->ConnectInput(conversionTask, 0, mgr->GetCommonInputContainer());
   // same for the output
   mgr->ConnectOutput(
       ptAnalysisTask, 1,
       mgr->CreateContainer("Pt spectrum", TList::Class(),
                            AliO2AnalysisManager::kOutputContainer,
                            "ESDsSpectrum.root"));
-  mgr->ConnectOutput(
-      conversionTask, 1,
-      mgr->CreateContainer("Timeframe", O2Timeframe::Class(),
-                           AliO2AnalysisManager::kOutputContainer,
-                           "timeframe.root"));
   // add a few files to the chain
   std::list<std::string> filelist = getFiles(files, nFiles);
   TChain *chain = new TChain("esdTree");
@@ -100,7 +88,5 @@ int runConversion(const char **files, int nFiles) {
 }
 
 #ifndef __CINT__
-int main(int argc, const char **argv) {
-  return runConversion(argv + 1, argc - 1);
-}
+int main(int argc, const char **argv) { return ptSpectrum(argv + 1, argc - 1); }
 #endif

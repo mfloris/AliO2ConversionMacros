@@ -25,16 +25,16 @@
 ///
 /// Prints an overview of the tracks and the timestamp for events which contain
 /// ambiguities
+/// \param filenames A list of all the timeframes to look at
+/// \param argc The number if files in filenames
 /// \return Returns 0 on succes.
 int readNewEvents(int argc, char **filenames) {
   for (int i = 0; i < argc; i++) {
     TString filename(filenames[i]);
     // MyTask;1/MyOutputContainer;1/
     TFile *file = new TFile(filename, "READ");
-    // file->ls();
-    auto directory = file->GetDirectory("MyTask");
-    // std::cout << directory->ClassName() << std::endl;
-    directory->ls();
+    auto directory = file->GetDirectory("Conversion Task");
+    std::cout << directory->ClassName() << std::endl;
     // this line leaks memory
     // while ((key = (TKey *)next())) {
     O2Timeframe *container =
@@ -43,30 +43,26 @@ int readNewEvents(int argc, char **filenames) {
       std::cerr << "Failed to read timeframe!\n";
       return -1;
     }
-    container->WriteToFile("testfile.bin");
-    report(PASS, "estimated compressed size: %lu",
-           container->estimate_compression());
-    // size_t event_count = container->getNumberOfEvents();
-    // std::cout << "Timeframe contains " << event_count << " events\n";
-    // for (size_t i = 0; i < event_count; i++) {
-    //   O2Event event = container->getEvent(i);
-    //   if (event.GetNumberOfAmbigousTracks()) {
-    //     printf("%lu %f\n Total: %lu, %lu, %lu\n Global: %lu, %lu, %lu\nITS: "
-    //            "%lu,"
-    //            "%lu, %lu\n",
-    //            i, event.getTimestamp(), event.GetNumberOfTracks(),
-    //            event.GetNumberOfUnambigousTracks(),
-    //            event.GetNumberOfAmbigousTracks(),
-    //            event.GetNumberOfGlobalTracks(),
-    //            event.GetNumberOfUnambigousGlobalTracks(),
-    //            event.GetNumberOfAmbigousGlobalTracks(),
-    //            event.GetNumberOfITSTracks(),
-    //            event.GetNumberOfUnambigousITSTracks(),
-    //            event.GetNumberOfAmbigousITSTracks());
-    //   }
-    // }
+    size_t event_count = container->getNumberOfEvents();
+    std::cout << "Timeframe contains " << event_count << " events\n";
+    for (size_t i = 0; i < event_count; i++) {
+      O2Event event = container->getEvent(i);
+      if (event.GetNumberOfAmbigousTracks()) {
+        printf("%lu %f\n Total: %lu, %lu, %lu\n Global: %lu, %lu, %lu\nITS: "
+               "%lu,"
+               "%lu, %lu\n",
+               i, event.getTimestamp(), event.GetNumberOfTracks(),
+               event.GetNumberOfUnambigousTracks(),
+               event.GetNumberOfAmbigousTracks(),
+               event.GetNumberOfGlobalTracks(),
+               event.GetNumberOfUnambigousGlobalTracks(),
+               event.GetNumberOfAmbigousGlobalTracks(),
+               event.GetNumberOfITSTracks(),
+               event.GetNumberOfUnambigousITSTracks(),
+               event.GetNumberOfAmbigousITSTracks());
+      }
+    }
     delete container;
-    //}
     delete (file);
   }
   return 0;
