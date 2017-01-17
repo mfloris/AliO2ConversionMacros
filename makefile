@@ -41,7 +41,7 @@ BINARIES := $(patsubst $(MACRO_DIR)/%.cxx, $(BIN_DIR)/%,$(MACROS))
 
 ALL_OBJ := $(CLASSES_OBJ) $(COMMON_MACROS_OBJ) $(MACROS_OBJ) $(DICTIONARY_OBJ)
 
-CPP_FLAGS := $(shell root-config --cflags) -fopenmp -fPIC -g -fno-omit-frame-pointer -O2 -pipe -march=native -I $(CLASS_DIR) -I $(COMMON_MACRO_DIR) -I $$ALICE_ROOT/include
+CPP_FLAGS := $(shell root-config --cflags) -fPIC -g -fno-omit-frame-pointer -O2 -pipe -march=native -I $(CLASS_DIR) -I $(COMMON_MACRO_DIR) -I $$ALICE_ROOT/include
 LD_FLAGS := --std=c++11 -lCling -lESD -lEG -lGeom -lMinuit -lVMC -lXMLParser -lTreePlayer -lXMLIO -lSTEERBase -lANALYSIS -lAOD -lANALYSISalice -lANALYSISaliceBase -lO2 -lboost_system -lboost_filesystem
 LD_FLAGS += $(shell root-config --glibs) -L $$ALICE_ROOT/lib
 LD_FLAGS += -L ~/lib #-lutilities
