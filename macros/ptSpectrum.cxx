@@ -41,17 +41,30 @@ int ptSpectrum(const char **files, int nFiles) {
   mgr->SetInputEventHandler(ESDH);
 
   // create an instance of your analysis task
+  ConversionAnalysis *conversionTask =
+      new ConversionAnalysis("Conversion Analysis");
+  if (nullptr == conversionTask) {
+    return -1;
+  }
+  // create an instance of your analysis task
   PtAnalysis *ptAnalysisTask = new PtAnalysis("Pt Analysis");
   if (nullptr == ptAnalysisTask) {
     return -1;
   }
   mgr->ConnectInput(ptAnalysisTask, 0, mgr->GetCommonInputContainer());
+  mgr->ConnectInput(conversionTask, 0, mgr->GetCommonInputContainer());
   // same for the output
   mgr->ConnectOutput(
       ptAnalysisTask, 1,
       mgr->CreateContainer("Pt spectrum", TList::Class(),
                            AliO2AnalysisManager::kOutputContainer,
                            "ESDsSpectrum.root"));
+
+  mgr->ConnectOutput(
+      conversionTask, 1,
+      mgr->CreateContainer("Timeframe", O2Timeframe::Class(),
+                           AliO2AnalysisManager::kOutputContainer,
+                           "timeframe.root"));
   // add a few files to the chain
   std::list<std::string> filelist = getFiles(files, nFiles);
   TChain *chain = new TChain("esdTree");
