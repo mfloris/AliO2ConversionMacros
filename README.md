@@ -50,7 +50,7 @@ Finally, to actually install AliRoot,AliPhysics run:
    ```bash
    $ aliBuild -j 6 -z -w ../sw build AliPhysics --disable GEANT3,GEANT4_VMC,fastjet
    ```
-   **TODO**:
+   **TODO**: This does not work. If you cloned root manually above it is not needed.
    Should build with root6. Something like 
    ```
    aliBuild -d --defaults ROOT6 -j 2 -z -w ../sw build AliPhysics
