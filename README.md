@@ -29,23 +29,23 @@ AliRoot and AliPhysics should be compiled against ROOT6.
    ```
    This is a temporary workaround: it should be possible to use alibuild's defaults (see below)
    
-3. Compile
+3. Optional steps, should not be needed on most systems:
 
-   Currently, the AliDist recipe does not correctly pull in the right version of gcc if the system's version is too new (as happens with e.g. Ubuntu). If compilation fails due to an incorrect version of gcc it is recommended to use clang (or an older gcc version) instead. On ubuntu the default c++ compiler can be set with the command
+      a .Currently, the AliDist recipe does not correctly pull in the right version of gcc if the system's version is too new (as happens with e.g. Ubuntu). If compilation fails due to an incorrect version of gcc it is recommended to use clang (or an older gcc version) instead. On ubuntu the default c++ compiler can be set with the command
    
-   ```bash
-   sudo update-alternatives --config c++ 
-   ```
-4. Troubleshoot 
+      ```bash
+      sudo update-alternatives --config c++ 
+      ```
+     b. Troubleshoot 
 
-   Compilation of Root6 might also fail if CPLUS_INCLUDE_PATH or C_INCLUDE_PATH are set as is the case when one is in a 'alienv enter' shell. To fix this run 
+     Compilation of Root6 might also fail if CPLUS_INCLUDE_PATH or C_INCLUDE_PATH are set as is the case when one is in a 'alienv enter' shell. To fix this run 
    
-   ```bash
-   unset CPLUS_INCLUDE_PATH
-   unset C_INCLUDE_PATH
-   ```
+      ```bash
+      unset CPLUS_INCLUDE_PATH
+      unset C_INCLUDE_PATH
+     ```
 
-Finally, to actually install AliRoot,AluPhysics run:
+Finally, to actually install AliRoot,AliPhysics run:
 
    ```bash
    $ aliBuild -j 6 -z -w ../sw build AliPhysics --disable GEANT3,GEANT4_VMC,fastjet
