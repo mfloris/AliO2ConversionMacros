@@ -26,13 +26,9 @@
 #include <string>
 #include <sys/wait.h>
 
-/// /alice/data/2010/LHC10b/000117042/O2s/pass3/10000117042035.230/.root
-const std::string localO2File = "/home/roel/alice/data/timeframes/";
-
-/// Converts existing O2s into AliO2Timeframes
-///
-/// \param mode Determines in what mode the conversion script runs.
-/// \return returns 0 on success
+/// Converts existing ESDs into O2Timeframes and computes the pt-spectrum for
+/// both. Stores the converted ESDs in timeframe.root and the histograms in two
+/// files {ESD,Timeframe}sSpectrum.root
 int ptSpectrum(const char **files, int nFiles) {
   // create the analysis manager
   AliO2AnalysisManager *mgr = new AliO2AnalysisManager("AnalysisTaskExample");

@@ -1,5 +1,5 @@
-/// \file runConversion.Cxx
-/// \brief implementation of the runConversion macro.
+/// \file getFromGrid.Cxx
+/// \brief implementation of the getFromGrid macro.
 /// \since 2016-11-16
 /// \author R.G.A. Deckers
 /// \copyright
@@ -23,21 +23,22 @@
 const char *DEFAULT_PATTERN = "*";
 const char *DEFAULT_OUT = ".";
 
-void asyncGrab(const char *directory, const char *pattern = DEFAULT_PATTERN,
-               const char *outputDirectory = DEFAULT_OUT) {
+// parallel grabs files from the grid using a syntax similar to find. do *NOT*
+// call
+// when already connected to the grid.
+void parallelGrab(const char *directory, const char *pattern = DEFAULT_PATTERN,
+                  const char *outputDirectory = DEFAULT_OUT) {
   // How many connections we try and keep open at a given time.
   const unsigned simultanious_connections = 64;
   pid_t child_pid[simultanious_connections];
   Int_t active_children = 0;
   int return_code;
-  TGrid::Connect("alien://", 0, 0, "t");
-  auto query = gGrid->Query(directory, pattern, "", "");
+
   while (active_children < simultanious_connections) {
     child_pid[active_children] = fork();
     if (child_pid[active_children] == 0) {
-      // report(INFO, "connecting");
-      // TGrid::Connect("alien://", 0, 0, "t");
-      // report(INFO, "executing query %s, %s", directory, pattern);
+      auto query = gGrid->Query(directory, pattern, "", "");
+      TGrid::Connect("alien://", 0, 0, "t");
 
       Int_t nEntries = query->GetEntries();
       report(PASS, "Found %d entries", nEntries);
@@ -79,10 +80,6 @@ void asyncGrab(const char *directory, const char *pattern = DEFAULT_PATTERN,
 }
 
 // based on RBertens tutorial
-const TString
-    localESDFile("/home/roel/alice/data/2010/LHC10h/000138275/ESDs/pass2/"
-                 "10000138275063.80/AliESDs.root");
-enum Mode { Local, Grid, TestGrid, Terminate };
 
 /// Download several files from the grid in parallel, has a syntax similar to
 /// aliensh's find. Output file names are {folder}/{result of pattern}.
@@ -92,12 +89,9 @@ enum Mode { Local, Grid, TestGrid, Terminate };
 /// \param folder The folder to write the output files to. Will be created
 /// (recusively) if it doesn't exist.
 /// \return returns 0 on success
-int runConversion(const char *folder, const char *pattern = DEFAULT_PATTERN,
-                  const char *output = DEFAULT_OUT) {
-  // create the analysis manager
-  // asyncGrab("/alice/data/2010/LHC10h/000138275/ESDs/pass2/",
-  //           "10000138275063.*/AliESDs.root", "~/alice/data2/");
-  asyncGrab(folder, pattern, output);
+int getFromGrid(const char *folder, const char *pattern = DEFAULT_PATTERN,
+                const char *output = DEFAULT_OUT) {
+  parallelGrab(folder, pattern, output);
   return 0;
 }
 
@@ -106,7 +100,7 @@ int main(int argc, char **argv) {
   if (argc == 1) {
     report(FAIL, "usage: getFromGrid <folder> [pattern] [output directory]");
   }
-  return runConversion(argv[1], argc >= 3 ? argv[2] : DEFAULT_PATTERN,
-                       argc >= 4 ? argv[3] : DEFAULT_OUT);
+  return getFromGrid(argv[1], argc >= 3 ? argv[2] : DEFAULT_PATTERN,
+                     argc >= 4 ? argv[3] : DEFAULT_OUT);
 }
 #endif

@@ -23,7 +23,7 @@
 #include <TAlienFile.h>
 #include <TChain.h>
 
-/// Converts existing local ESDs into AliO2Timeframes. returns an
+/// Converts existing local ESDs into O2Timeframes. returns an
 /// AnalysisResult.root file
 ///
 /// \param files A list of files to convert

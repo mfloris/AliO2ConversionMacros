@@ -21,10 +21,8 @@
 #include <TLegend.h>
 #include <TList.h>
 #include <TStyle.h>
-/// Short makePtPlots description
-///
-/// More detailed makePtPlots description
 
+// Creates plots from the results of PtSpectrum, that's it.
 void makePtPlots() {
   TFile *ESDsFile = TFile::Open("ESDsSpectrum.root", "READ");
   TList *ESDsList = dynamic_cast<TList *>(ESDsFile->Get("Pt spectrum"));
