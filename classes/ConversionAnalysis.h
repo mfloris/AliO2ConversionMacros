@@ -8,17 +8,11 @@
 #define CONVERSIONANALYSIS_H
 
 // Include the base classes
-#include <AliO2AnalysisTaskSE.h>
-
-#include "InterfaceTimestampped.h"
+#include <AliAnalysisTaskSE.h>
+#include <ESDEventConverter.h>
 #include <TRandom2.h>
 
-class O2Timeframe;
-/// Short ConversionAnalysis description
-///
-/// More detailed ConversionAnalysis description
-
-class ConversionAnalysis : public AliO2AnalysisTaskSE {
+class ConversionAnalysis : public AliAnalysisTaskSE {
 public:
   /// Default constructor
   ConversionAnalysis();
@@ -41,12 +35,10 @@ private:
   ConversionAnalysis(const ConversionAnalysis &);
   /// assignment operator prohibited
   ConversionAnalysis &operator=(const ConversionAnalysis &);
-  unsigned event_counter = 0;
-  unsigned failed_event_counter = 0;
-  unsigned eventsOnQueue = 0;
-  TRandom2 rng;
-  timestamp_t currentTimestamp = 0.0f;
-  O2Timeframe *mResults = nullptr; //!
+  TRandom2 mRng;
+  double mCurrentTimestamp = 0.0f;
+  unsigned mEventsOnQueue = 0;
+  ESDEventConverter mConverter;
   // root specific
   ClassDef(ConversionAnalysis, 1);
 };

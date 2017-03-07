@@ -14,8 +14,6 @@
 /// https://www.gnu.org/copyleft/gpl.html
 ///
 
-#include "O2Timeframe.h"
-
 #include "ConversionAnalysis.h"
 #include <AliESDEvent.h>
 #include <AliLog.h>
@@ -27,48 +25,44 @@ ClassImp(ConversionAnalysis);
 ConversionAnalysis::ConversionAnalysis() {}
 // named constructor
 ConversionAnalysis::ConversionAnalysis(const char *name)
-    : AliO2AnalysisTaskSE(name) {
+    : AliAnalysisTaskSE(name) {
   DefineInput(0, TChain::Class());
-  DefineOutput(1, O2Timeframe::Class());
+  // DefineOutput(1, O2Timeframe::Class());
 }
 // default destructor
-ConversionAnalysis::~ConversionAnalysis() { delete mResults; }
+ConversionAnalysis::~ConversionAnalysis() {}
 
 void ConversionAnalysis::UserCreateOutputObjects() {
-  mResults = new O2Timeframe();
-  PostData(1, mResults);
+  // mResults = new O2Timeframe();
+  // PostData(1, mResults);
 }
 // per event
 void ConversionAnalysis::UserExec(Option_t *option) {
-  event_counter += 1;
   // TODO: Ask why AODEvent() doesn't work
   const AliESDEvent *event = dynamic_cast<AliESDEvent *>(InputEvent());
   if (!event) {
     AliError(TString::Format("Failed to fetch ESD event"));
-    failed_event_counter += 1;
-    return;
-  } else if (0 == event->GetNumberOfTracks()) {
-    AliInfo(TString::Format("No Tracks in event"));
-    failed_event_counter += 1;
     return;
   }
   // TODO: We can probably do this much faster by using math
   Double_t mu = 25.0 / 20000.0;
-  timestamp_t offset = 0;
-  while (0 == eventsOnQueue) {
-    eventsOnQueue = rng.Poisson(mu);
-    if (eventsOnQueue > 1) {
-      report(WARN, "Created pileup!");
+  double offset = 0;
+  while (0 == mEventsOnQueue) {
+    mEventsOnQueue = mRng.Poisson(mu);
+    if (mEventsOnQueue > 1) {
+      // report(WARN, "Created pileup!");
     }
     offset += 25;
   }
-  currentTimestamp += offset;
-  mResults->addEvent(event, currentTimestamp);
-  eventsOnQueue -= 1;
-  PostData(1, mResults);
+  mCurrentTimestamp += offset;
+  // std::cout << "Adding event @ " << mCurrentTimestamp << " containing "
+  //           << event->GetNumberOfTracks() << " tracks" << std::endl;
+  mConverter.addESDEvent(event, mCurrentTimestamp);
+  mEventsOnQueue -= 1;
 }
 // Cleanup
 void ConversionAnalysis::Terminate(Option_t *option) {
-  AliInfo(TString::Format("Failed %u/%u events", failed_event_counter,
-                          event_counter));
+  // AliInfo(TString::Format("Failed %u/%u events", failed_event_counter,
+  //                         event_counter));
+  mConverter.toFile(GetName());
 }

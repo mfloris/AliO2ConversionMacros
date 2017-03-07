@@ -47,10 +47,11 @@ int runConversion(const char **files, int fileCount) {
   // now we create an instance of your task
   mgr->ConnectInput(task, 0, mgr->GetCommonInputContainer());
   // same for the output
-  mgr->ConnectOutput(task, 1,
-                     mgr->CreateContainer("O2Timeframe", O2Timeframe::Class(),
-                                          AliAnalysisManager::kOutputContainer,
-                                          fileName));
+  // mgr->ConnectOutput(task, 1,
+  //                    mgr->CreateContainer("O2Timeframe",
+  //                    O2Timeframe::Class(),
+  //                                         AliAnalysisManager::kOutputContainer,
+  //                                         fileName));
   TChain chain("esdTree");
   for (int i = 0; i < fileCount; i++) {
     chain.Add(files[i]);
