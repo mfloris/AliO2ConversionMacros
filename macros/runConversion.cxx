@@ -18,6 +18,7 @@
 #include <AliAnalysisAlien.h>
 #include <AliAnalysisManager.h>
 #include <AliESDInputHandler.h>
+#include <AliMCEventHandler.h>
 #include <AliVEventHandler.h>
 #include <O2logging.h>
 #include <TAlienFile.h>
@@ -33,6 +34,8 @@ int runConversion(const char **files, int fileCount) {
   // create the analysis manager
   AliAnalysisManager *mgr = new AliAnalysisManager("AnalysisTaskExample");
   AliESDInputHandler *ESDH = new AliESDInputHandler();
+  AliMCEventHandler *mcHandler = new AliMCEventHandler();
+  mgr->SetMCtruthEventHandler(mcHandler);
   mgr->SetInputEventHandler(ESDH);
 
   // create an instance of your analysis task

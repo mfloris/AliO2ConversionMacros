@@ -57,7 +57,7 @@ void ConversionAnalysis::UserExec(Option_t *option) {
   mCurrentTimestamp += offset;
   // std::cout << "Adding event @ " << mCurrentTimestamp << " containing "
   //           << event->GetNumberOfTracks() << " tracks" << std::endl;
-  mConverter.addESDEvent(event, mCurrentTimestamp);
+  mConverter.addESDEvent(mCurrentTimestamp, event, MCEvent());
   mEventsOnQueue -= 1;
 }
 // Cleanup

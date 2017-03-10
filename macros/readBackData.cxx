@@ -1,11 +1,11 @@
-#include <Entities/Track.h>
+#include <Entities/Vertex.h>
 #include <ecs/Entity.h>
 #include <ecs/EntityCollection.h>
 
 using namespace ecs;
-using namespace track;
+using namespace vertex;
 int readNewEvents(const char *file) {
-  using Entity_t = Track<ESDEventIndex>;
+  using Entity_t = Vertex<ESDEventMapping>;
   Handler h;
   // tell the handler to read all the data from the file we just made.
   // it will only read the first page in memory to read all metadata,
@@ -20,26 +20,13 @@ int readNewEvents(const char *file) {
   unsigned event_start = 0;
   std::cout << container.size() << std::endl;
   for (unsigned u = 0; u < container.size(); u++) {
-    // container[u] -> the u'th track in the container. this is a Track_t
-    // object.
-    //
-    unsigned this_event = container[u].get<ESDEventIndex>();
-    if (this_event != event_id) {
-      std::cout << this_event << "\t" << u - event_start << std::endl;
-      event_start = u;
-      event_id = this_event;
-    }
-    // std::cout << container[u].get<T>() << "\t";
-    // std::cout << container[u].get<X>() << " ";
-    // std::cout << container[u].get<Y>() << " ";
-    // std::cout << container[u].get<Z>() << std::endl;
-
-    // std::cout << container[u].length_xyz() << std::endl;
+    auto map = container[u].get<ESDEventMapping>();
+    std::cout << u << "\t" << map.trackCount() << std::endl;
   }
-  unsigned this_event = container[container.size() - 1].get<ESDEventIndex>();
-  std::cout << this_event << "\t" << container.size() - event_start
-            << std::endl;
+
   return 0;
 }
 
+#ifndef __CINT__
 int main(int argc, char **argv) { return readNewEvents(argv[1]); }
+#endif
