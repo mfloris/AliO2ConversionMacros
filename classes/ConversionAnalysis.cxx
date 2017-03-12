@@ -64,5 +64,5 @@ void ConversionAnalysis::UserExec(Option_t *option) {
 void ConversionAnalysis::Terminate(Option_t *option) {
   // AliInfo(TString::Format("Failed %u/%u events", failed_event_counter,
   //                         event_counter));
-  mConverter.toFile(GetName());
+  mConverter.toFile("aod.bin");
 }
