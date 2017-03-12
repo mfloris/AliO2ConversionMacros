@@ -1,5 +1,5 @@
 # AliO2ConversionMacros
-Experimental conversion macro for creating new AoDs from old data for the ALICE's O2 upgrade.
+Programs for testing the new AOD format of AliRoot/aod-upgrade for Run3. Contains example analysis tasks and can convert (local) ESD root files to the new format.
 
 ## Pre-requisites
 
@@ -49,11 +49,17 @@ This will produce executable versions of the scripts in the macros folder
 ## How to use the code
 
 After running make, several executables are placed in ./bin/
-Because the code depends on modifications to AliRoot which are not on the grid the analysis tasks can only be run locally.
-The executable getFromGrid is a wrapper around aliensh's find command which can be used to fetch multiple files from the grid in parallel based on a {folder}/{pattern} combination similiar to the 'find' command.
+Because the code depends on modifications to AliRoot which are not on the grid (and cannot be pushed in a par file because they require c++11) the analysis tasks can only be run locally.
 
- Once you have some ESDs availible, you can run a pt-spectrum analysis over them using the ptSpectrum executable. This will produce two root files containing the pt-spectrum computed using the original ESDs as well as one containing the spectrum computed using the timeframe (which is dynamically build from the given ESDs). Plots can be created by running makePtPlots afterwards.
+I recommend downloading ESDs using the following script
+```bash
+ for FILE in $(alien_find  /alice/data/2010/LHC10h/000139038/ESDs/pass2/ 10000139038065.1*/AliESDs.root|head -n -2);
+ do mkdir -p ~/`dirname $FILE` && alien_cp -m alien:$FILE ~/$FILE& done
+```
+ Which will, in parallel, fetch all the `AliESD.root` files given by the `alien_find` command and put them in your home folder with the same path as they would in aliensh.
+ 
+ Once you have a couple of ESD files availible, you can convert them by running `./bin/runConversion <FILES>`, this will generate a single file `aod.bin`.  
 
-There is also the executable runConversion, this executable takes a list of ESDs as argument and builds a single timeframe based on the data of the ESDs. 
-
-readNewEvents shows how to read back the data created using runConversion. It takes as argument a list of .root files produced by runConversion.
+ The command `./bin/PtAnalysis <NEW FILES>` produces a Pt plot of all the tracks in the new files and shows how to use the new analysis framework (same as the old).
+ 
+ The macro `readBackData` uses a more direct interface for reading files.
