@@ -13,25 +13,30 @@
 /// General Public License for more details at
 /// https://www.gnu.org/copyleft/gpl.html
 
+#include "immintrin.h"
+#include <Entities/Particle.h>
 #include <Entities/Track.h>
 #include <Entities/Vertex.h>
 #include <O2AnalysisManager.h>
-#include <O2AnalysisTask.h>
+#include <O2ESDAnalysisTask.h>
 #include <TFile.h>
 #include <TH1F.h>
 #include <TRandom2.h>
 
 // What type of track and vertex we want to use for our events.
-using Track_t = ecs::Track<ecs::track::Pt>;
+using Track_t = ecs::Track<ecs::track::Pt, ecs::track::mc::MonteCarloIndex>;
+using Mc_t = ecs::Particle<ecs::particle::Px, ecs::particle::Py>;
 using Vertex_t = ecs::Vertex<>;
 
 // our analysis object. By deriving from O2ESDAnalysisTask the framework will
 // build events for us from datastreams using the same mapping of vertex->tracks
 // that was used in the original ESD files.
-class PtAnalysis : public O2ESDAnalysisTask<Vertex_t, Track_t> {
+class PtAnalysis : public O2ESDAnalysisTask<Vertex_t, Track_t, Mc_t> {
 public:
   // Gets called once.
-  virtual void UserInit() { mHistogram = TH1F("All Tracks", "", 600, 0, 5); }
+  virtual void UserInit() {
+    mHistogram = TH1F("Pt Efficieny", "", 600, -0.1, 3);
+  }
   // Gets called once per event.
   virtual void UserExec() {
     // get the current event as before.
@@ -39,8 +44,90 @@ public:
     // std::cout << "This event contains " << getEvent().getNumberOfTracks()
     //           << " tracks\n";
     for (int i = 0; i < event.getNumberOfTracks(); i++) {
-      mHistogram.Fill(event.getTrack(i).pt());
+      auto track = event.getTrack(i);
+      double McLabel = track.mcLabel();
+      auto mcTrack = event.getParticle(McLabel);
+      mHistogram.Fill(track.pt() / mcTrack.pt());
     }
+  }
+  TH1F &getHistogramRef() { return mHistogram; }
+
+protected:
+  // protected stuff goes here
+
+private:
+  TH1F mHistogram;
+};
+
+// our analysis object. By deriving from O2AnalysisTask the framework will
+// not build any events but call UserExec for each input file.
+class PtAnalysisFlat : public O2AnalysisTask {
+public:
+  // Gets called once.
+  virtual void UserInit() {
+    mHistogram = TH1F("Pt Efficieny, Flat", "", 600, -0.1, 3);
+  }
+  // Gets called once per event, which is a single file for this type.
+  virtual void UserExec() {
+    ecs::EntityCollection<Track_t> tracks(*(this->getHandler()));
+    ecs::EntityCollection<Mc_t> particles(*(this->getHandler()));
+    // std::cout << "This event contains " << getEvent().getNumberOfTracks()
+    //           << " tracks\n";
+    for (int i = 0; i < tracks.size(); i++) {
+      auto track = tracks[i];
+      double McLabel = track.mcLabel();
+      auto mcTrack = particles[McLabel];
+      mHistogram.Fill(track.pt() / mcTrack.pt());
+    }
+  }
+  TH1F &getHistogramRef() { return mHistogram; }
+
+protected:
+  // protected stuff goes here
+
+private:
+  TH1F mHistogram;
+};
+
+// our analysis object. By deriving from O2AnalysisTask the framework will
+// not build any events but call UserExec for each input file.
+// currently bugged, only returns values > 1
+class PtAnalysisFlatVectorized : public O2AnalysisTask {
+public:
+  // Gets called once.
+  virtual void UserInit() {
+    mHistogram = TH1F("Pt Efficieny, Flat, Vectorized", "", 600, -0.1, 3);
+  }
+  // Gets called once per event, which is a single file for this type.
+  virtual void UserExec() {
+    ecs::EntityCollection<Track_t> tracks(*(this->getHandler()));
+    ecs::EntityCollection<Mc_t> particles(*(this->getHandler()));
+
+    auto track_indices = tracks.get<ecs::track::mc::MonteCarloIndex>();
+    auto track_px = tracks.get<ecs::track::Px>();
+    auto track_py = tracks.get<ecs::track::Py>();
+
+    auto particle_px = particles.get<ecs::particle::Px>();
+    auto particle_py = particles.get<ecs::particle::Py>();
+    // Define a vector type of 8 floats.
+    typedef float v8f __attribute__((vector_size(32)));
+    for (int i = 0; i < tracks.size() - 8; i += 8) {
+
+      auto indices = _mm256_loadu_si256((__m256i const *)(track_indices + i));
+      v8f ppy = _mm256_i32gather_ps((float *)particle_py, indices, 1);
+      v8f ppx = _mm256_i32gather_ps((float *)particle_px, indices, 1);
+      v8f ppt2 = (ppy * ppy + ppx * ppx);
+
+      v8f tpx = _mm256_loadu_ps((float *)track_px + i);
+      v8f tpy = _mm256_loadu_ps((float *)track_py + i);
+      v8f tpt2 = (tpx * tpx + tpy * tpy);
+
+      v8f pt_efficieny = _mm256_sqrt_ps(tpt2 / ppt2);
+      for (unsigned u = 0; u < 8; u++) {
+        mHistogram.Fill(pt_efficieny[u]);
+      }
+    }
+    // skip handling the remaining tracks (max 7)
   }
   TH1F &getHistogramRef() { return mHistogram; }
 
@@ -63,14 +150,18 @@ int PtSpectrum(const char **files, int fileCount) {
   // TODO: maybe only expose this as a reference object which wraps. That way
   // auto works and it is also clear to the user that what is being returned is
   // a reference.
-  PtAnalysis &task = mgr.createNewTask<PtAnalysis>();
+  auto &task1 = mgr.createNewTask<PtAnalysisFlatVectorized>();
+  auto &task2 = mgr.createNewTask<PtAnalysisFlat>();
+  auto &task3 = mgr.createNewTask<PtAnalysis>();
   mgr.startAnalysis();
 
   // Save the output:
   // open a file
   auto file = TFile::Open("AnalysisResult.root", "RECREATE");
   // Write the histogram
-  task.getHistogramRef().Write();
+  task1.getHistogramRef().Write();
+  task2.getHistogramRef().Write();
+  task3.getHistogramRef().Write();
   // Close the file.
   file->Close();
   return 0;
