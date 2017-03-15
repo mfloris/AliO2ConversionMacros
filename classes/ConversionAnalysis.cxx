@@ -27,6 +27,7 @@ ConversionAnalysis::ConversionAnalysis() {}
 ConversionAnalysis::ConversionAnalysis(const char *name)
     : AliAnalysisTaskSE(name) {
   DefineInput(0, TChain::Class());
+  mConverter.useMcInfo(true);
   // DefineOutput(1, O2Timeframe::Class());
 }
 // default destructor
