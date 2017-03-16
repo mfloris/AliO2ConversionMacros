@@ -46,7 +46,6 @@ int runConversion(const char **files, int fileCount) {
   TString fileName = AliAnalysisManager::GetCommonFileName();
   fileName += ":";
   fileName += task->GetName(); // create a subfolder in the file
-  report(INFO, "saving as %s", fileName.Data());
   // now we create an instance of your task
   mgr->ConnectInput(task, 0, mgr->GetCommonInputContainer());
   // same for the output

@@ -1,5 +1,10 @@
 /// \file PtSpectrum.Cxx
-/// \brief A demonstration of how to use the new analysis framework,
+/// \brief A demonstration of how to use the new analysis framework
+///
+/// Contains three different tasks, all computing the pt_efficieny. One
+/// constructs ESD events and follows the old syntax. Two which run over raw
+/// files, of which one is vectorized. Tasks are run in parallel.
+///
 /// \since 2017-03-09
 /// \author R.G.A. Deckers
 /// \copyright
@@ -21,7 +26,7 @@
 #include <O2ESDAnalysisTask.h>
 #include <TFile.h>
 #include <TH1F.h>
-#include <TRandom2.h>
+#include <TThread.h>
 
 // What type of track and vertex we want to use for our events.
 using Track_t = ecs::Track<ecs::track::Pt, ecs::track::mc::MonteCarloIndex>;
@@ -33,9 +38,10 @@ using Vertex_t = ecs::Vertex<>;
 // that was used in the original ESD files.
 class PtAnalysis : public O2ESDAnalysisTask<Vertex_t, Track_t, Mc_t> {
 public:
+  virtual ~PtAnalysis(){};
   // Gets called once.
   virtual void UserInit() {
-    mHistogram = TH1F("Pt Efficieny", "", 600, -0.1, 3);
+    mHistogram = TH1F("ESD", "Pt Efficieny, Flat, Vectorized", 600, -0.1, 3);
   }
   // Gets called once per event.
   virtual void UserExec() {
@@ -50,7 +56,7 @@ public:
       mHistogram.Fill(track.pt() / mcTrack.pt());
     }
   }
-  TH1F &getHistogramRef() { return mHistogram; }
+  virtual void finish() { mHistogram.Write(); }
 
 protected:
   // protected stuff goes here
@@ -65,7 +71,7 @@ class PtAnalysisFlat : public O2AnalysisTask {
 public:
   // Gets called once.
   virtual void UserInit() {
-    mHistogram = TH1F("Pt Efficieny, Flat", "", 600, -0.1, 3);
+    mHistogram = TH1F("flat", "Pt Efficieny, Flat, Vectorized", 600, -0.1, 3);
   }
   // Gets called once per event, which is a single file for this type.
   virtual void UserExec() {
@@ -75,12 +81,12 @@ public:
     //           << " tracks\n";
     for (int i = 0; i < tracks.size(); i++) {
       auto track = tracks[i];
-      double McLabel = track.mcLabel();
+      auto McLabel = track.mcLabel();
       auto mcTrack = particles[McLabel];
       mHistogram.Fill(track.pt() / mcTrack.pt());
     }
   }
-  TH1F &getHistogramRef() { return mHistogram; }
+  virtual void finish() { mHistogram.Write(); }
 
 protected:
   // protected stuff goes here
@@ -94,48 +100,76 @@ private:
 // currently bugged, only returns values > 1
 class PtAnalysisFlatVectorized : public O2AnalysisTask {
 public:
+  PtAnalysisFlatVectorized(int number = 0) : mNumber(number) {}
+  ~PtAnalysisFlatVectorized() {}
   // Gets called once.
   virtual void UserInit() {
-    mHistogram = TH1F("Pt Efficieny, Flat, Vectorized", "", 600, -0.1, 3);
+    // std::cout << "Creating a histogram called"
+    //           << TString::Format("Pt Efficieny, Flat, Vectorized;%d",
+    //           mNumber)
+    //           << std::endl;
+    mHistogram = TH1F(TString::Format("vectorized, thread %d", mNumber),
+                      "Pt Efficieny, Flat, Vectorized", 600, -0.1, 3);
   }
   // Gets called once per event, which is a single file for this type.
   virtual void UserExec() {
     ecs::EntityCollection<Track_t> tracks(*(this->getHandler()));
     ecs::EntityCollection<Mc_t> particles(*(this->getHandler()));
-
     auto track_indices = tracks.get<ecs::track::mc::MonteCarloIndex>();
     auto track_px = tracks.get<ecs::track::Px>();
     auto track_py = tracks.get<ecs::track::Py>();
 
     auto particle_px = particles.get<ecs::particle::Px>();
     auto particle_py = particles.get<ecs::particle::Py>();
-    // Define a vector type of 8 floats.
+
+    // auto track_indices = tracks.get<ecs::track::mc::MonteCarloIndex>();
+    // auto track_px = tracks.get<ecs::track::Px>();
+    // auto track_py = tracks.get<ecs::track::Py>();
+    //
+    // auto particle_px = particles.get<ecs::particle::Px>();
+    // auto particle_py = particles.get<ecs::particle::Py>();
+    // // Define a vector type of 8 floats.
     typedef float v8f __attribute__((vector_size(32)));
-    for (int i = 0; i < tracks.size() - 8; i += 8) {
-
+    int i;
+    for (i = 0; i < tracks.size() - 8; i += 8) {
+      //
       auto indices = _mm256_loadu_si256((__m256i const *)(track_indices + i));
-      v8f ppy = _mm256_i32gather_ps((float *)particle_py, indices, 1);
-      v8f ppx = _mm256_i32gather_ps((float *)particle_px, indices, 1);
+      v8f ppy = _mm256_i32gather_ps((float *)particle_py, indices, 4);
+      v8f ppx = _mm256_i32gather_ps((float *)particle_px, indices, 4);
       v8f ppt2 = (ppy * ppy + ppx * ppx);
-
+      //
       v8f tpx = _mm256_loadu_ps((float *)track_px + i);
       v8f tpy = _mm256_loadu_ps((float *)track_py + i);
       v8f tpt2 = (tpx * tpx + tpy * tpy);
-
+      //
       v8f pt_efficieny = _mm256_sqrt_ps(tpt2 / ppt2);
       for (unsigned u = 0; u < 8; u++) {
         mHistogram.Fill(pt_efficieny[u]);
       }
     }
-    // skip handling the remaining tracks (max 7)
+    // handle the remaining tracks in a scalar fashion (max 7)
+    for (; i < tracks.size(); i++) {
+      auto tpt2 = track_px[i] * track_px[i] + track_py[i] * track_py[i];
+      auto label = track_indices[i];
+      auto ppt2 = particle_px[label] * particle_px[label] +
+                  particle_py[label] * particle_py[label];
+      mHistogram.Fill(sqrt(tpt2 / ppt2));
+    }
   }
-  TH1F &getHistogramRef() { return mHistogram; }
+  virtual void finish() {
+    // Don't clog the output with duplicates.
+    if (mNumber == 0) {
+      mHistogram.Write();
+    }
+  }
+  // TH1F &getHistogramRef() { return mHistogram; }
 
 protected:
   // protected stuff goes here
 
 private:
   TH1F mHistogram;
+  int mNumber;
 };
 
 int PtSpectrum(const char **files, int fileCount) {
@@ -145,24 +179,31 @@ int PtSpectrum(const char **files, int fileCount) {
   for (int i = 0; i < fileCount; i++) {
     mgr.addFile(files[i]);
   }
-  // Note the '&'! this has to be a reference otherwise we create a copy of the
+  // Note the '&'! this has to be a reference otherwise we create a copy of
+  // the
   // newly created task and it will not be updated.
   // TODO: maybe only expose this as a reference object which wraps. That way
-  // auto works and it is also clear to the user that what is being returned is
+  // auto works and it is also clear to the user that what is being returned
+  // is
   // a reference.
-  auto &task1 = mgr.createNewTask<PtAnalysisFlatVectorized>();
-  auto &task2 = mgr.createNewTask<PtAnalysisFlat>();
-  auto &task3 = mgr.createNewTask<PtAnalysis>();
-  mgr.startAnalysis();
+  for (int i = 0; i < 1024; i++) {
+    mgr.createNewTask<PtAnalysisFlatVectorized>(i);
+  }
+  // auto &task1 = mgr.createNewTask<PtAnalysisFlatVectorized>();
+  auto &task_flat = mgr.createNewTask<PtAnalysisFlat>();
+  auto &task_esd = mgr.createNewTask<PtAnalysis>();
 
+  auto file = TFile::Open("AnalysisResult.root", "RECREATE");
+  mgr.startAnalysis();
+  std::cout << "Finished analysis" << std::endl;
   // Save the output:
   // open a file
-  auto file = TFile::Open("AnalysisResult.root", "RECREATE");
-  // Write the histogram
-  task1.getHistogramRef().Write();
-  task2.getHistogramRef().Write();
-  task3.getHistogramRef().Write();
-  // Close the file.
+  // auto file = TFile::Open("AnalysisResult.root", "RECREATE");
+  // // Write the histogram
+  // task1.getHistogramRef().Write();
+  // task2.getHistogramRef().Write();
+  // task3.getHistogramRef().Write();
+  // // Close the file.
   file->Close();
   return 0;
 }
