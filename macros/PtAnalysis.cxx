@@ -97,17 +97,13 @@ private:
 
 // our analysis object. By deriving from O2AnalysisTask the framework will
 // not build any events but call UserExec for each input file.
-// currently bugged, only returns values > 1
+// NOTE: Requires avx2!
 class PtAnalysisFlatVectorized : public O2AnalysisTask {
 public:
   PtAnalysisFlatVectorized(int number = 0) : mNumber(number) {}
   ~PtAnalysisFlatVectorized() {}
   // Gets called once.
   virtual void UserInit() {
-    // std::cout << "Creating a histogram called"
-    //           << TString::Format("Pt Efficieny, Flat, Vectorized;%d",
-    //           mNumber)
-    //           << std::endl;
     mHistogram = TH1F(TString::Format("vectorized, thread %d", mNumber),
                       "Pt Efficieny, Flat, Vectorized", 600, -0.1, 3);
   }
@@ -122,12 +118,6 @@ public:
     auto particle_px = particles.get<ecs::particle::Px>();
     auto particle_py = particles.get<ecs::particle::Py>();
 
-    // auto track_indices = tracks.get<ecs::track::mc::MonteCarloIndex>();
-    // auto track_px = tracks.get<ecs::track::Px>();
-    // auto track_py = tracks.get<ecs::track::Py>();
-    //
-    // auto particle_px = particles.get<ecs::particle::Px>();
-    // auto particle_py = particles.get<ecs::particle::Py>();
     // // Define a vector type of 8 floats.
     typedef float v8f __attribute__((vector_size(32)));
     int i;
@@ -162,7 +152,6 @@ public:
       mHistogram.Write();
     }
   }
-  // TH1F &getHistogramRef() { return mHistogram; }
 
 protected:
   // protected stuff goes here
@@ -179,31 +168,18 @@ int PtSpectrum(const char **files, int fileCount) {
   for (int i = 0; i < fileCount; i++) {
     mgr.addFile(files[i]);
   }
-  // Note the '&'! this has to be a reference otherwise we create a copy of
-  // the
-  // newly created task and it will not be updated.
-  // TODO: maybe only expose this as a reference object which wraps. That way
-  // auto works and it is also clear to the user that what is being returned
-  // is
-  // a reference.
+
   for (int i = 0; i < 1024; i++) {
     mgr.createNewTask<PtAnalysisFlatVectorized>(i);
   }
-  // auto &task1 = mgr.createNewTask<PtAnalysisFlatVectorized>();
+  // Note the '&'! this has to be a reference otherwise we create a copy of
+  // the newly created task and it will not be updated.
   auto &task_flat = mgr.createNewTask<PtAnalysisFlat>();
   auto &task_esd = mgr.createNewTask<PtAnalysis>();
 
+  // open a file to put the results in.
   auto file = TFile::Open("AnalysisResult.root", "RECREATE");
   mgr.startAnalysis();
-  std::cout << "Finished analysis" << std::endl;
-  // Save the output:
-  // open a file
-  // auto file = TFile::Open("AnalysisResult.root", "RECREATE");
-  // // Write the histogram
-  // task1.getHistogramRef().Write();
-  // task2.getHistogramRef().Write();
-  // task3.getHistogramRef().Write();
-  // // Close the file.
   file->Close();
   return 0;
 }

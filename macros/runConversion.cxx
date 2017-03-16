@@ -43,6 +43,8 @@ int runConversion(const char **files, int fileCount) {
   if (nullptr == task) {
     return -1;
   }
+  // Change this to false if converting real data.
+  task->usingMcData(true);
   TString fileName = AliAnalysisManager::GetCommonFileName();
   fileName += ":";
   fileName += task->GetName(); // create a subfolder in the file

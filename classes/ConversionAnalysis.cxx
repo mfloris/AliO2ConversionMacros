@@ -27,19 +27,13 @@ ConversionAnalysis::ConversionAnalysis() {}
 ConversionAnalysis::ConversionAnalysis(const char *name)
     : AliAnalysisTaskSE(name) {
   DefineInput(0, TChain::Class());
-  mConverter.useMcInfo(true);
-  // DefineOutput(1, O2Timeframe::Class());
 }
 // default destructor
 ConversionAnalysis::~ConversionAnalysis() {}
 
-void ConversionAnalysis::UserCreateOutputObjects() {
-  // mResults = new O2Timeframe();
-  // PostData(1, mResults);
-}
+void ConversionAnalysis::UserCreateOutputObjects() {}
 // per event
 void ConversionAnalysis::UserExec(Option_t *option) {
-  // TODO: Ask why AODEvent() doesn't work
   const AliESDEvent *event = dynamic_cast<AliESDEvent *>(InputEvent());
   if (!event) {
     AliError(TString::Format("Failed to fetch ESD event"));
@@ -50,20 +44,13 @@ void ConversionAnalysis::UserExec(Option_t *option) {
   double offset = 0;
   while (0 == mEventsOnQueue) {
     mEventsOnQueue = mRng.Poisson(mu);
-    if (mEventsOnQueue > 1) {
-      // report(WARN, "Created pileup!");
-    }
     offset += 25;
   }
   mCurrentTimestamp += offset;
-  // std::cout << "Adding event @ " << mCurrentTimestamp << " containing "
-  //           << event->GetNumberOfTracks() << " tracks" << std::endl;
   mConverter.addESDEvent(mCurrentTimestamp, event, MCEvent());
   mEventsOnQueue -= 1;
 }
 // Cleanup
 void ConversionAnalysis::Terminate(Option_t *option) {
-  // AliInfo(TString::Format("Failed %u/%u events", failed_event_counter,
-  //                         event_counter));
   mConverter.toFile("aod.bin");
 }

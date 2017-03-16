@@ -26,6 +26,7 @@ public:
   virtual void UserExec(Option_t *option);
   // Cleanup
   virtual void Terminate(Option_t *option);
+  void usingMcData(bool setTo) { mConverter.useMcInfo(setTo); }
 
 protected:
   // protected stuff goes here
