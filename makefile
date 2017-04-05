@@ -6,6 +6,16 @@ NUKE = rm -r $1
 COPY_DIR = cp -rv $1 $2
 MV = cp -v $1 $2
 LIB_SUFFIX :=.so
+OS := $(shell uname)
+
+ifeq ($(OS),Darwin)
+  CXX=/usr/local/opt/llvm/bin/clang++
+  CC=/usr/local/opt/llvm/bin/clang
+else
+  CXX=clang++
+  CC=clang
+endif
+
 
 PROJECT_DIR :=$(dir $(realpath $(lastword $(MAKEFILE_LIST))))
 OBJ_DIR := $(PROJECT_DIR)obj
@@ -31,9 +41,18 @@ BINARIES := $(patsubst $(MACRO_DIR)/%.cxx, $(BIN_DIR)/%,$(MACROS))
 
 ALL_OBJ := $(CLASSES_OBJ) $(COMMON_MACROS_OBJ) $(MACROS_OBJ) $(DICTIONARY_OBJ)
 
-CPP_FLAGS := $(shell root-config --cflags) -fopenmp  -fPIC -g -fno-omit-frame-pointer -O2 -pipe -march=native -I $(CLASS_DIR) -I $(COMMON_MACRO_DIR) -I $$ALICE_ROOT/include
-LD_FLAGS := --std=c++11 -fopenmp -lCling -lESD -lEG -lGeom -lMinuit -lVMC -lXMLParser -lTreePlayer -lXMLIO -lSTEERBase -lANALYSIS -lAOD -lANALYSISalice -lANALYSISaliceBase -lO2 -lboost_system -lboost_filesystem -lboost_iostreams
+CPP_FLAGS := $(shell root-config --cflags) -fPIC -g -fno-omit-frame-pointer -O2 -pipe -march=native -I $(CLASS_DIR) -I $(COMMON_MACRO_DIR) -I $$ALICE_ROOT/include
+LD_FLAGS := --std=c++11 -lCling -lESD -lEG -lGeom -lMinuit -lVMC -lXMLParser -lTreePlayer -lXMLIO -lSTEERBase -lANALYSIS -lAOD -lANALYSISalice -lANALYSISaliceBase -lO2 -lboost_system -lboost_filesystem
 LD_FLAGS += $(shell root-config --glibs) -L $$ALICE_ROOT/lib
+LD_FLAGS += -L ~/lib #-lutilities
+
+# MF: This is needed for OpenMP, assumes that llvm was installed with home brew, which should provide openMP, contrary to the system
+ifeq ($(OS),Darwin)
+  LD_FLAGS  +=  -L/usr/local/opt/llvm/lib
+  CPP_FLAGS += -I/usr/local/opt/llvm/include
+endif
+
+
 
 .SECONDARY: $(ALL_OBJ)
 
@@ -44,27 +63,27 @@ objects: $(ALL_OBJ)
 $(BIN_DIR)/% : $(OBJ_DIR)/macros/%.o $(CLASSES_OBJ) $(COMMON_MACROS) $(DICTIONARY_OBJ)
 	$(call REPORT,linking $@)
 	$(call CHK_DIR_EXISTS, $(dir $@))
-	clang++ -o "$@" $^ $(LD_FLAGS)
+	$(CXX) -o "$@" $^ $(LD_FLAGS)
 
 $(OBJ_DIR)/classes/%.o: $(CLASS_DIR)/%.cxx $(CLASS_DIR)/%.h
 	$(call REPORT,Compiling $@)
 	$(call CHK_DIR_EXISTS, $(dir $@))
-	clang++ $(CPP_FLAGS) -o "$@" -c $<
+	$(CXX) $(CPP_FLAGS) -o "$@" -c $<
 
 $(OBJ_DIR)/dictionaries/%.o: $(DICTIONARY_DIR)/%_dict.cxx
 	$(call REPORT,Compiling $@)
 	$(call CHK_DIR_EXISTS, $(dir $@))
-	clang++ $(CPP_FLAGS) -o "$@" -c $<
+	$(CXX) $(CPP_FLAGS) -o "$@" -c $<
 
 $(OBJ_DIR)/macros/%.o: $(MACRO_DIR)/%.cxx
 	$(call REPORT,Compiling $@)
 	$(call CHK_DIR_EXISTS, $(dir $@))
-	clang++ $(CPP_FLAGS) -o "$@" -c $<
+	$(CXX) $(CPP_FLAGS) -o "$@" -c $<
 
 $(OBJ_DIR)/macros/common/%.o: $(MACRO_DIR)/common/%.cxx
 	$(call REPORT,Compiling $@)
 	$(call CHK_DIR_EXISTS, $(dir $@))
-	clang++ $(CPP_FLAGS) -o "$@" -c $<
+	$(CXX) $(CPP_FLAGS) -o "$@" -c $<
 
 $(DICTIONARY_DIR)/%_dict.cxx: $(CLASS_DIR)/%.h $(DICTIONARY_DIR)/%_LinkDef.h
 	$(call REPORT,Creating dictionary $@)
